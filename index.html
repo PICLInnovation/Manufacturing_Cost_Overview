@@ -1,0 +1,1029 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Per Motor Cost Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Chakra+Petch:wght@500;600;700&display=swap">
+<style>
+/* Layout: HUD "mission control". Fixed glass sidebar of dropdown filters; board = ticker, day timeline (playable), gauge hero + donut + mini KPIs, frame tiles, heat map, charts.
+   Colour: deep space navy, cyan HUD lines, orange action colour; one fixed neon colour per frame (C blue, E orange, H mint, BLDC amber) everywhere. */
+:root{
+  --bg:#e5ecf7; --solid:#ffffff; --surface:rgba(255,255,255,.76); --hi:rgba(255,255,255,.7); --ink:#0b1730; --ink2:#41557c; --muted:#697ba0; --grid:#dde6f3; --line:#c7d4ea; --tile:#edf2fa;
+  --hud:#2f7fe8; --blob1:rgba(70,130,255,.28); --blob2:rgba(255,150,90,.20); --gl:rgba(60,110,200,.07); --glowpx:0; --onseg:#ffffff; --neu:#5b6b8c;
+  --side-bg:#060c1b; --side-ink:#eaf1fc; --side-mut:#8da2c6; --side-line:#1c2f55; --ctl-bg:#0e1a35; --ctl-ink:#f2f6fc; --ctl-line:#2a4075;
+  --hero-a:#050f2b; --hero-b:#0b3fbf; --hero-ink:#ffffff; --hero-mut:#a9c3f2; --cyan:#3ee6ff;
+  --accent:#ff7a3d; --focus:#6aa8ff; --good:#17784a; --bad:#c23a2d; --warn-bg:#fff2d6; --warn-ink:#6b4700;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#7a5cf0;
+  --font:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif; --font-d:'Chakra Petch','Barlow',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#03060e; --solid:#0a1224; --surface:rgba(12,21,42,.68); --hi:rgba(110,170,255,.09); --ink:#eaf2ff; --ink2:#a9bbdb; --muted:#7b90b5; --grid:#15233f; --line:#1f3359; --tile:#0f1b36;
+  --hud:#3ee6ff; --blob1:rgba(40,100,255,.30); --blob2:rgba(0,229,255,.12); --gl:rgba(62,230,255,.055); --glowpx:12; --onseg:#05101f; --neu:#8da0c4;
+  --warn-bg:#3a2d0c; --warn-ink:#f2cf7a; --good:#3cc98a; --bad:#ff8a7e;
+  --s1:#4aa3ff; --s2:#ff7a45; --s3:#2ee6a6; --s4:#ffc233; --s5:#ff6fa8; --s6:#4fd66b; --s7:#b79cff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#03060e; --solid:#0a1224; --surface:rgba(12,21,42,.68); --hi:rgba(110,170,255,.09); --ink:#eaf2ff; --ink2:#a9bbdb; --muted:#7b90b5; --grid:#15233f; --line:#1f3359; --tile:#0f1b36;
+  --hud:#3ee6ff; --blob1:rgba(40,100,255,.30); --blob2:rgba(0,229,255,.12); --gl:rgba(62,230,255,.055); --glowpx:12; --onseg:#05101f; --neu:#8da0c4;
+  --warn-bg:#3a2d0c; --warn-ink:#f2cf7a; --good:#3cc98a; --bad:#ff8a7e;
+  --s1:#4aa3ff; --s2:#ff7a45; --s3:#2ee6a6; --s4:#ffc233; --s5:#ff6fa8; --s6:#4fd66b; --s7:#b79cff; color-scheme:dark}
+*{box-sizing:border-box}
+body{background-color:var(--bg);background-image:radial-gradient(900px 520px at 88% -8%,var(--blob1),transparent 62%),radial-gradient(760px 560px at -6% 38%,var(--blob2),transparent 60%),linear-gradient(var(--gl) 1px,transparent 1px),linear-gradient(90deg,var(--gl) 1px,transparent 1px);background-size:auto,auto,46px 46px,46px 46px;background-attachment:fixed;color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;margin:0;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--side-bg)}
+button:focus-visible,select:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app{display:grid;grid-template-columns:288px minmax(0,1fr);min-height:100vh}
+
+/* ---------- sidebar ---------- */
+.side{position:sticky;top:0;height:100vh;overflow:auto;background:linear-gradient(180deg,#071125,var(--side-bg));color:var(--side-ink);padding:22px 18px 20px max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px;border-right:1px solid var(--side-line);box-shadow:1px 0 28px -10px rgba(62,230,255,.35)}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:42px;height:42px;border-radius:11px;background:conic-gradient(from 210deg,#3ee6ff,#2f7fe8,#ff7a3d,#3ee6ff);color:#04101f;font:700 22px var(--font-d);display:grid;place-items:center;flex:none;box-shadow:0 0 22px -4px #3ee6ff}
+.brand b{display:block;font:700 19px/1.05 var(--font-d);letter-spacing:.04em;text-transform:uppercase}
+.brand span{font-size:12px;color:var(--side-mut)}
+.sec{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);font-weight:600;margin:0}
+.fl{display:flex;flex-direction:column;gap:12px}
+.fg{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fg>label,.fg>span.lab{font-size:11.5px;color:var(--side-mut);font-weight:500}
+.side select,.dd summary{width:100%;background:var(--ctl-bg);color:var(--ctl-ink);border:1px solid var(--ctl-line);border-radius:9px;padding:8px 30px 8px 11px;font:500 13.5px var(--font);min-height:38px;cursor:pointer}
+.side select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#9fb4d8 50%),linear-gradient(135deg,#9fb4d8 50%,transparent 50%);background-position:calc(100% - 17px) 16px,calc(100% - 12px) 16px;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.side select:hover,.dd summary:hover{border-color:#3ee6ff88;box-shadow:0 0 14px -6px #3ee6ff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dd{position:relative}
+.dd summary{list-style:none;display:flex;align-items:center;position:relative;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dd summary::-webkit-details-marker{display:none}
+.dd summary::after{content:"";position:absolute;right:13px;top:50%;width:5px;height:5px;border-right:2px solid #9fb4d8;border-bottom:2px solid #9fb4d8;transform:translateY(-70%) rotate(45deg)}
+.dd[open] summary{border-color:var(--focus)}
+.dd .menu{margin-top:6px;background:var(--ctl-bg);border:1px solid var(--ctl-line);border-radius:9px;padding:6px}
+.opt{display:flex;align-items:center;gap:9px;padding:8px 8px;border-radius:6px;cursor:pointer;font-size:13.5px;color:var(--ctl-ink)}
+.opt:hover{background:#1b2f58}
+.opt input{accent-color:var(--accent);margin:0;width:15px;height:15px}
+.mrow{display:flex;gap:4px;padding:0 0 6px;border-bottom:1px solid var(--ctl-line);margin-bottom:4px}
+.mrow button{background:transparent;border:0;color:#8fc0ff;font:600 12px var(--font);cursor:pointer;padding:4px 6px;border-radius:4px}
+.mrow button:hover{background:#1b2f58}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.reset{background:var(--accent);color:#1a0c04;border:0;border-radius:9px;padding:10px 12px;font:700 13px var(--font);cursor:pointer;min-height:40px;letter-spacing:.03em;box-shadow:0 0 20px -6px var(--accent)}
+.reset:hover{filter:brightness(1.1)}
+.sidefoot{margin-top:auto;display:flex;flex-direction:column;gap:10px;font-size:11.5px;color:var(--side-mut);line-height:1.5}
+.ghost{background:transparent;color:var(--side-ink);border:1px solid var(--side-line);border-radius:9px;padding:8px 10px;font:500 12.5px var(--font);cursor:pointer;min-height:36px}
+.ghost:hover{background:#0e1a35;border-color:#3ee6ff66}
+
+/* ---------- board ---------- */
+.main{padding-block:20px 40px;padding-left:24px;padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px;min-width:0}
+.ticker{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--surface);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.track{display:flex;gap:26px;align-items:center;width:max-content;padding:10px 26px 10px 0;animation:tick 55s linear infinite;font-size:13px;white-space:nowrap}
+.ticker:hover .track{animation-play-state:paused}
+@keyframes tick{to{transform:translateX(-50%)}}
+.ti{display:inline-flex;gap:8px;align-items:center;color:var(--ink2)}
+.ti b{font:600 16px var(--font-d);color:var(--ink)}
+.ti em{font-style:normal;color:var(--muted)}
+.sep{color:var(--hud);opacity:.7;font-size:9px}
+.topline{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--hud);font-weight:600}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--hud);box-shadow:0 0 0 0 var(--hud);animation:pulse 2.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--hud) 60%,transparent)}70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.topline h1{font:700 38px/1.02 var(--font-d);letter-spacing:.03em;text-transform:uppercase;margin:6px 0 0;background:linear-gradient(90deg,var(--ink) 30%,var(--hud));-webkit-background-clip:text;background-clip:text;color:transparent}
+.topline p{margin:7px 0 0;color:var(--ink2);font-size:13.5px}
+.tright{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.active{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.pill{background:var(--surface);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2);font-weight:500}
+.pill b{color:var(--ink);font-weight:600}
+.tbtn{background:transparent;border:1px solid var(--hud);color:var(--hud);border-radius:999px;padding:6px 14px;font:600 12.5px var(--font);cursor:pointer;letter-spacing:.04em;min-height:34px}
+.tbtn:hover{background:color-mix(in srgb,var(--hud) 14%,transparent);box-shadow:0 0 18px -6px var(--hud)}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+.card{background-color:var(--surface);background-image:linear-gradient(180deg,var(--hi),transparent 38%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;padding:18px 20px 16px;min-width:0;position:relative;box-shadow:0 18px 40px -24px rgba(0,0,0,.55);transition:border-color .25s,box-shadow .25s}
+.card:hover{border-color:color-mix(in srgb,var(--hud) 55%,var(--line));box-shadow:0 18px 40px -22px rgba(0,0,0,.55),0 0 26px -10px var(--hud)}
+.card::after,.tile::after{content:"";position:absolute;inset:5px;border-radius:10px;pointer-events:none;opacity:.8;
+  background:linear-gradient(var(--hud),var(--hud)) top left/11px 1.5px no-repeat,linear-gradient(var(--hud),var(--hud)) top left/1.5px 11px no-repeat,
+  linear-gradient(var(--hud),var(--hud)) top right/11px 1.5px no-repeat,linear-gradient(var(--hud),var(--hud)) top right/1.5px 11px no-repeat,
+  linear-gradient(var(--hud),var(--hud)) bottom left/11px 1.5px no-repeat,linear-gradient(var(--hud),var(--hud)) bottom left/1.5px 11px no-repeat,
+  linear-gradient(var(--hud),var(--hud)) bottom right/11px 1.5px no-repeat,linear-gradient(var(--hud),var(--hud)) bottom right/1.5px 11px no-repeat}
+.card h2{font:600 18px var(--font-d);letter-spacing:.05em;text-transform:uppercase;margin:0}
+.card .d{font-size:12.5px;color:var(--ink2);margin:3px 0 0}
+.ch{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.ch select{background:var(--tile);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 28px 6px 10px;font:500 13px var(--font);min-height:34px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink2) 50%),linear-gradient(135deg,var(--ink2) 50%,transparent 50%);background-position:calc(100% - 15px) 14px,calc(100% - 10px) 14px;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.plot{position:relative;height:330px}.plot.tall{height:370px}.plot.mid{height:300px}
+.empty[hidden]{display:none}
+.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:20px;background:var(--solid);border-radius:10px}
+
+/* timeline */
+.tl{padding:14px 18px 10px}
+.tlh{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.play{background:var(--accent);color:#1a0c04;border:0;border-radius:999px;padding:8px 18px;font:700 13px var(--font);cursor:pointer;min-height:36px;box-shadow:0 0 22px -6px var(--accent);letter-spacing:.03em}
+.play:hover{filter:brightness(1.1)}
+.tld{font-size:13px;color:var(--ink2);flex:1;min-width:200px}.tld b{color:var(--ink);font-weight:600}
+.tlbars{display:grid;grid-template-columns:repeat(31,minmax(0,1fr));gap:4px;align-items:end}
+.tb{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:104px;background:transparent;border:0;padding:0;cursor:pointer;color:var(--muted);font:500 10.5px var(--font);min-width:0}
+.tb i{display:block;width:100%;border-radius:4px 4px 2px 2px;background:var(--grid);transition:background .2s,height .3s}
+.tb.on i{background:linear-gradient(180deg,var(--hud),var(--s1));box-shadow:0 0 14px -2px var(--hud)}
+.tb.z i{opacity:.55}
+.tb .bd{margin-top:4px;line-height:1}
+.tb .bv{font-size:9px;color:var(--ink2);margin-bottom:3px;white-space:nowrap;line-height:1}
+.tb.on .bd{color:var(--ink);font-weight:600}
+.tb:hover i{filter:brightness(1.35)}
+
+/* hero */
+.hero{background:radial-gradient(520px 260px at 85% 0%,rgba(62,230,255,.28),transparent 65%),linear-gradient(135deg,var(--hero-a),var(--hero-b));color:var(--hero-ink);border:1px solid #3ee6ff55;overflow:hidden;display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-height:340px}
+.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(#ffffff12 1px,transparent 1px),linear-gradient(90deg,#ffffff12 1px,transparent 1px);background-size:28px 28px;-webkit-mask-image:linear-gradient(180deg,#000 0%,transparent 75%);mask-image:linear-gradient(180deg,#000 0%,transparent 75%);pointer-events:none}
+.hero>*{position:relative}
+.hero .k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--hero-mut);font-weight:600}
+.hbrow{display:grid;grid-template-columns:minmax(140px,190px) minmax(0,1fr);gap:16px;align-items:center}
+.gwrap{position:relative;aspect-ratio:1;width:100%;max-width:190px}
+.gcen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.gnum{font:700 54px/1 var(--font-d);white-space:nowrap}
+.gnum small{font-size:24px;color:var(--hero-mut);margin-right:2px;font-weight:600}
+.gcap{font-size:10.5px;color:var(--hero-mut);margin-top:6px;letter-spacing:.06em;text-transform:uppercase}
+.hside .sub{font-size:13px;color:var(--hero-mut);margin-top:6px}
+.hero .pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.hp{background:#ffffff1a;border:1px solid #ffffff33;border-radius:10px;padding:7px 11px;font-size:12px;line-height:1.3;color:var(--hero-ink);min-width:0}
+.hp b{display:block;font:700 20px var(--font-d);letter-spacing:.01em}
+.hp i{font-style:normal;color:var(--hero-mut)}
+.fh{display:flex;flex-direction:column;margin-top:10px}
+.fhr{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;padding:7px 2px;border-top:1px solid #ffffff22;font-size:12.5px}
+.fhh{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--hero-mut);border-top:0;padding-bottom:4px;font-weight:600}
+.fhr .fn{display:flex;align-items:center;gap:7px;font-weight:600;min-width:0}
+.fhr b{font:700 17px var(--font-d)}
+.fhr em{font-style:normal;color:var(--hero-mut);font-size:11px;margin-left:6px}
+.fhr .lo b{color:#8cf5c9}.fhr .hi b{color:#ffb98f}
+.hlr{display:grid;grid-template-columns:82px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;background:var(--tile);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:10px;cursor:pointer;color:inherit;font:inherit}
+.hlr:hover{border-color:var(--ink2)}
+.hlr .tag{font:600 11px var(--font);letter-spacing:.1em;text-transform:uppercase;border:1px solid;border-radius:999px;padding:3px 8px;text-align:center}
+.hlr .who b{display:flex;align-items:center;gap:7px;font-weight:600}
+.hlr .who span{font-size:12px;color:var(--muted)}
+.hlr .val{font:700 32px/1 var(--font-d)}
+.spread{font-size:12.5px;color:var(--ink2);padding:2px 2px 0}
+.kstack{display:flex;flex-direction:column;gap:16px}
+.mini{flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:14px 16px 10px;min-height:0}
+.mini .k{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.mini .v{font:700 34px/1.05 var(--font-d);margin-top:2px;white-space:nowrap}
+.mini .v small{font-size:17px;color:var(--ink2);font-weight:600;margin-right:2px}
+.mini .s{font-size:12px;color:var(--ink2)}
+.spark{height:40px;margin:6px -4px -4px}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.tile{position:relative;background-color:var(--surface);background-image:linear-gradient(180deg,var(--hi),transparent 40%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;padding:15px 18px 14px;min-width:0;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;display:block;transition:border-color .25s,box-shadow .25s,transform .25s}
+.tile:hover{border-color:var(--ink2);transform:translateY(-2px);box-shadow:0 14px 30px -18px rgba(0,0,0,.6)}
+.tile[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:-1px}
+.tile .n{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.tile .cap{margin-left:auto;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tile .a{font:700 40px/1.05 var(--font-d);margin:8px 0 2px}
+.tile .m{font-size:12px;color:var(--muted)}
+.split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.split span{background:var(--tile);border-radius:8px;padding:6px 8px;min-width:0}
+.split i{display:block;font-style:normal;font-size:10.5px;color:var(--muted);letter-spacing:.04em}
+.split b{font:700 16px var(--font-d)}
+.sharel{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink2);margin-top:10px}
+.sharel b{color:var(--ink);font-weight:600}
+.share{height:6px;border-radius:99px;background:var(--grid);margin-top:5px;overflow:hidden}
+.share i{display:block;height:100%;border-radius:99px;box-shadow:0 0 12px 0 currentColor}
+
+/* leaderboard, insights, table, heat */
+.lb{display:flex;flex-direction:column;gap:4px}
+.lbr{background:transparent;border:0;padding:4px 6px;margin:0 -6px;border-radius:8px;cursor:pointer;font:inherit;color:inherit;text-align:left;width:calc(100% + 12px);display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) 64px;align-items:center;gap:10px;font-size:13px}
+.lbr:hover{background:var(--tile)}
+.lbr .t{display:flex;flex-direction:column;min-width:0}
+.lbr .t b{font-weight:600;display:flex;align-items:center;gap:7px}
+.lbr .t span{font-size:11.5px;color:var(--muted);padding-left:17px}
+.lbr .bar{height:10px;background:var(--grid);border-radius:99px;overflow:hidden}
+.lbr .bar i{display:block;height:100%;border-radius:99px}
+.lbr .val{font:700 18px var(--font-d);text-align:right}
+.note{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:10px 14px;font-size:13px}
+.tblwrap{overflow:auto;max-height:430px;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:8px 11px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid)}
+th{position:sticky;top:0;background:var(--tile);color:var(--muted);font-size:11px;letter-spacing:.07em;text-transform:uppercase;z-index:1;font-weight:600}
+th:first-child,td:first-child{text-align:left}
+tfoot td{font-weight:700;background:var(--tile)}
+.foot{font-size:12px;color:var(--muted);line-height:1.6}
+.hmwrap{overflow-x:auto;padding-bottom:6px}
+.hm{display:grid;gap:3px;width:100%}
+.hd{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;font-size:10.5px;color:var(--muted);line-height:1.15;padding-bottom:3px}
+.hd b{color:var(--ink);font-size:12.5px;font-weight:600}
+.hl{display:flex;align-items:center;gap:7px;font-weight:600;font-size:12.5px;position:sticky;left:0;background:var(--solid);z-index:1;padding-right:6px;white-space:nowrap}
+.hc{height:40px;border:0;border-radius:6px;font:600 11px var(--font);cursor:pointer;padding:0;font-variant-numeric:tabular-nums;min-width:0}
+.hc:hover{outline:2px solid var(--ink);outline-offset:1px}
+.hc.none{background:repeating-linear-gradient(45deg,transparent 0 4px,var(--grid) 4px 5px);cursor:default;outline:0;border:1px dashed var(--grid)}
+.hleg{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.hleg i{display:block;width:110px;height:8px;border-radius:99px;background:linear-gradient(90deg,var(--tile),var(--neu))}
+.ins{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--grid);font-size:13.5px;line-height:1.5}
+.ins:last-child{border-bottom:0}.ins .dot{margin-top:7px}.ins b{font-weight:600}
+
+/* present mode */
+body.sbhide .side{display:none}.sbhide .app{grid-template-columns:minmax(0,1fr)}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#sbHide,#sbShow{font:600 12.5px var(--font);cursor:pointer;border-radius:9px;border:1px solid var(--ctl-line);background:var(--ctl-bg);color:var(--ctl-ink);padding:7px 11px}
+#sbHide:hover,#sbShow:hover{border-color:#3ee6ff88;box-shadow:0 0 14px -6px #3ee6ff}
+#sbShow{display:none;position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));z-index:70;box-shadow:0 6px 20px -6px rgba(0,0,0,.5)}
+.sbhide #sbShow{display:block}
+:root{--hh:66px}
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:75;height:var(--hh);display:flex;align-items:center;gap:14px;padding:0 18px 0 max(14px,env(safe-area-inset-left,0px));background:linear-gradient(90deg,#071125,#0a1a3d);color:var(--side-ink);border-bottom:1px solid var(--side-line);box-shadow:0 6px 24px -12px rgba(62,230,255,.45)}
+.hdr .brand{gap:10px}.hdr .logo{width:34px;height:34px;font-size:18px;border-radius:9px}.hdr .brand b{font-size:17px}.hdr .brand span{font-size:11.5px}
+.hsp{flex:1}
+.hdr .htitle{display:flex;flex-direction:column;min-width:0}
+.hdr .status{color:#3ee6ff;font-size:10.5px}
+.hdr h1{margin:3px 0 0;font:700 clamp(18px,5vw,27px)/1 var(--font-d);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;background:linear-gradient(90deg,#fff 30%,#3ee6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hbtn{font:600 13px var(--font);cursor:pointer;border-radius:9px;border:1px solid var(--ctl-line);background:var(--ctl-bg);color:var(--ctl-ink);padding:8px 13px;white-space:nowrap}
+.hbtn:hover{border-color:#3ee6ff88;box-shadow:0 0 14px -6px #3ee6ff}
+#sbToggle[aria-expanded=true]{border-color:#3ee6ff99}
+#sbToggle{font-size:19px;line-height:1;padding:7px 13px}
+.ibtns{display:flex;gap:10px}
+.ibtn{flex:1;height:42px;display:grid;place-items:center;font-size:19px;line-height:1;color:#eaf1fc;background:var(--ctl-bg);border:1px solid var(--ctl-line);border-radius:10px;cursor:pointer}
+.ibtn:hover{border-color:#3ee6ff88;box-shadow:0 0 14px -6px #3ee6ff}
+.ibtn.on,.present #present{background:#2a56a8;border-color:#4f7fd6}
+.ibtn svg{width:18px;height:18px}
+.pills{display:flex;gap:6px}
+.pills button{flex:1;padding:8px 4px;border-radius:9px;border:1px solid var(--ctl-line);background:var(--ctl-bg);color:var(--ctl-ink);font:600 12.5px var(--font);cursor:pointer}
+.pills button.on{background:linear-gradient(135deg,#1b4fc4,#2a6df4);border-color:#6aa8ff;color:#fff}
+.rgh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.rgh .lab{font-size:11.5px;color:var(--side-mut);font-weight:500}
+.rgv{font-size:11.5px;color:#3ee6ff;font-weight:600;text-align:right}
+.rs{position:relative;height:26px}
+.rtrack,.rfill{position:absolute;top:11px;height:4px;border-radius:4px}
+.rtrack{left:0;right:0;background:var(--ctl-line)}.rfill{background:#3ee6ff}
+.rs input[type=range]{position:absolute;left:0;top:0;width:100%;height:26px;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
+.rs input[type=range]::-webkit-slider-runnable-track{background:none}.rs input[type=range]::-moz-range-track{background:none}
+.rs input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #2a6df4;cursor:pointer}
+.rs input[type=range]::-moz-range-thumb{pointer-events:auto;width:10px;height:10px;border-radius:50%;background:#fff;border:3px solid #2a6df4;cursor:pointer}
+.dn{display:flex;gap:8px}.dn button{flex:1;height:36px;border-radius:9px;border:1px solid var(--ctl-line);background:var(--ctl-bg);color:var(--ctl-ink);font:600 18px var(--font);cursor:pointer}
+.snav{display:flex;flex-direction:column;gap:8px}
+.sn{display:flex;align-items:center;gap:11px;text-align:left;width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--ctl-line);background:var(--ctl-bg);color:var(--ctl-ink);cursor:pointer;font-family:var(--font)}
+.sn:hover{border-color:#3ee6ff88}
+.sn .sni{flex:none;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-size:17px;background:#13254a;color:#3ee6ff}
+.sn b{display:block;font:600 14px/1.2 var(--font)}.sn i{display:block;font-style:normal;font-size:11.5px;color:var(--side-mut)}
+.sn[aria-selected=true]{background:linear-gradient(135deg,#1b4fc4,#2a6df4);border-color:#6aa8ff;box-shadow:0 0 18px -6px #3ee6ff}
+.sn[aria-selected=true] .sni{background:rgba(255,255,255,.18);color:#fff}.sn[aria-selected=true] i{color:#cfe0ff}
+#consView{display:none;flex-direction:column;gap:16px}
+.tab-cons #consView{display:flex}
+.tab-cons .main>*:not(#consView):not(.endbar){display:none!important}
+.side{top:calc(var(--hh) + env(safe-area-inset-top,0px));height:calc(100vh - var(--hh) - env(safe-area-inset-top,0px))}
+@media(max-width:520px){.hdr .brand span{display:none}.hbtn{padding:8px 10px}}
+@media(max-width:900px){.app{grid-template-columns:minmax(0,1fr)}.side{position:fixed;left:0;top:0;z-index:80;width:288px;max-width:88vw;box-shadow:8px 0 40px rgba(0,0,0,.55)}.sbhide #sbShow{top:calc(10px + env(safe-area-inset-top,0px))}}
+bodybody.present .main{padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px));max-width:1700px;margin:0 auto;width:100%}
+
+@media (max-width:1100px){.c8,.c4,.c7,.c5,.c6{grid-column:span 12}.hero{grid-column:span 7}.donutc{grid-column:span 5}.kstack{grid-column:span 12;flex-direction:row}.kstack>.mini{flex:1}}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;height:auto;padding:18px max(16px,env(safe-area-inset-right,0px)) 18px max(16px,env(safe-area-inset-left,0px))}
+  .fl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .sidefoot{margin-top:0}
+  .main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .hero,.donutc{grid-column:span 12}.kstack{flex-direction:column}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .topline h1{font-size:28px}.tright{align-items:flex-start}.active{justify-content:flex-start}
+  .plot,.plot.tall,.plot.mid{height:300px}
+  .lbr{grid-template-columns:minmax(0,110px) minmax(0,1fr) 56px}
+}
+@media (max-width:640px){.hero{min-height:0}.hbrow{grid-template-columns:minmax(0,1fr)}.gwrap{margin:0 auto}.tb .bv{display:none}.tb .bd{visibility:hidden}.tb:nth-child(5n+1) .bd{visibility:visible}.tiles{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.track{animation:none}.ticker{overflow-x:auto}.status i{animation:none}}
+.endbar{justify-content:center;display:flex;align-items:center;gap:20px;padding:20px 24px;margin-top:8px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.endbar .lg{flex:none;width:84px;height:84px;border-radius:14px;background:#fff;display:grid;place-items:center;padding:8px;box-shadow:0 0 22px -8px var(--hud)}
+.endbar .lg img{width:100%;height:100%;object-fit:contain;display:block}
+.endbar .qt{flex:1;min-width:0;transition:opacity .5s}
+.endbar q{display:block;font:600 19px/1.35 var(--font-d);color:var(--ink);quotes:"\201C" "\201D"}
+.endbar .qs{display:block;margin-top:6px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--hud);font-weight:600}
+@media(max-width:600px){.endbar{flex-direction:column;text-align:center}.endbar q{font-size:16px}}
+.hlogo{flex:none;width:52px;height:52px;border-radius:11px;background:#fff;display:grid;place-items:center;padding:4px;box-shadow:0 0 16px -6px #3ee6ff}
+.hlogo img{width:100%;height:100%;object-fit:contain;display:block}
+
+.pfk{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.pfk .card{padding:14px 16px;position:relative;overflow:hidden}
+.pfk .card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ac,var(--s1))}
+.pfk .k{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pfk .v{font:700 28px var(--font-d);margin-top:4px;letter-spacing:.01em}
+.pfk .s{font-size:12px;color:var(--ink2);margin-top:2px}
+.pfrec{font-size:12.5px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.pfrec b{color:var(--ink)}.pfrec .ok{color:var(--s3);font-weight:700}
+.pfd{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+tr.pft td{font-weight:700;background:var(--tile)}
+.dev{display:inline-block;margin-top:4px;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ffb36b;background:rgba(255,122,61,.14);border:1px solid rgba(255,122,61,.55);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.dev.lg2{font-size:11px;padding:2px 10px;margin:0 0 4px}
+
+.pfbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pfbar .pl{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pfbar .pills{min-width:280px}
+.pfbar .pills button{padding:8px 18px}
+.xlsb{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;border:1px solid color-mix(in srgb,#21a366 55%,transparent);background:color-mix(in srgb,#21a366 14%,transparent);color:#2fcf84;cursor:pointer;flex:none;margin-left:auto;padding:0}
+.xlsb:hover{background:color-mix(in srgb,#21a366 28%,transparent);box-shadow:0 0 14px -5px #21a366}
+.xlsb svg{width:17px;height:17px}
+.fg.pfonly{display:none}.tab-cons .fg.pfonly{display:flex}
+</style>
+
+<header class="hdr"><button class="hbtn" id="sbToggle" type="button" aria-expanded="true" aria-controls="sidebar" title="Show / hide filters" aria-label="Show or hide filters">☰</button><span class="hlogo"><img alt="PICL" src="data:image/png;base64,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"></span><div class="htitle"><span class="status"><i></i>Nov 2026 · source workbook</span><h1 id="hTitle">Cost overview</h1></div></header>
+<div class="app">
+<aside class="side" aria-label="Filters">
+  
+  <p class="sec">Dashboard</p>
+  <div class="snav" role="tablist" aria-label="Dashboard">
+    <button class="sn" role="tab" id="tabCost" data-tab="cost" aria-selected="true"><span class="sni">₹</span><span><b>Cost per motor</b><i>Manufacturing cost</i></span></button>
+    <button class="sn" role="tab" id="tabCons" data-tab="cons" aria-selected="false"><span class="sni">⚡</span><span><b>P&amp;F Cost</b><i>Power &amp; fuel per motor</i></span></button>
+  </div>
+  <p class="sec">Filters</p>
+  <div class="fl">
+    <div class="fg" hidden><label for="range">Period</label><select id="range"></select></div>
+    <div class="fg"><span class="lab">Trend granularity</span><div class="pills" id="granPills"><button type="button" data-g="d">Daily</button><button type="button" data-g="w">Weekly</button><button type="button" data-g="m">Monthly</button></div></div>
+    <div class="fg"><div class="rgh"><span class="lab" id="rgLab">Date</span><span class="rgv" id="rgVal"></span></div><select id="rgSel" aria-label="Range"></select>
+      <div class="rs"><div class="rtrack"></div><div class="rfill" id="rFill"></div><input type="range" id="rMin" min="0" max="0" value="0" aria-label="Range start"><input type="range" id="rMax" min="0" max="0" value="0" aria-label="Range end"></div></div>
+    <div class="fg" id="dayNav"><span class="lab">Quick day nav</span><div class="dn"><button type="button" id="prevD" aria-label="Previous day">‹</button><button type="button" id="nextD" aria-label="Next day">›</button></div></div>
+    <div class="fg" hidden><label for="viewBy">View by</label><select id="viewBy"><option value="d">Daily · day wise</option><option value="w">Weekly · week wise</option><option value="m">Monthly · month wise</option></select></div>
+    <div class="two" hidden>
+      <div class="fg"><label for="from">From</label><select id="from"></select></div>
+      <div class="fg"><label for="to">To</label><select id="to"></select></div>
+    </div>
+    <div class="fg pfonly"><label for="pfDept">Department (P&amp;F)</label><select id="pfDept" aria-label="Department filter"><option value="all">All departments</option><option value="PSC">PSC</option><option value="BLDC">BLDC</option></select></div>
+    <div class="fg"><span class="lab" id="frameLab">Frame</span>
+      <details class="dd" id="frameDD"><summary id="frameSum" aria-labelledby="frameLab frameSum">All frames</summary><div class="menu" id="frameMenu"></div></details></div>
+    <div class="fg"><label for="metric">Cost view</label>
+      <select id="metric"><option value="total">Total manufacturing cost</option><option value="labour">Total labour cost</option><option value="prod">Production cost (Wdg + Assy + Shell)</option><option value="sup">Support cost</option><option value="wdg">Winding cost</option><option value="asy">Assembly cost</option><option value="shl">Shell cost</option></select></div>
+    <div class="fg"><label for="daysSel">Days</label><select id="daysSel"><option value="prod">Production days only</option><option value="all">All days</option></select></div>
+    <div class="fg"><label for="labelSel">Data labels</label><select id="labelSel"><option value="smart">Smart (key points)</option><option value="all">All values</option><option value="off">Off</option></select></div>
+  </div>
+  <button class="reset" id="reset" type="button">Reset filters</button>
+  <div class="sidefoot">
+    <div class="ibtns"><button class="ibtn" id="present" type="button" title="Full screen presentation" aria-label="Full screen presentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button class="ibtn on" id="themeBtn" type="button" title="Switch light / dark" aria-label="Switch light or dark theme">🌙</button></div>
+    <div>Source: master workbook, built 18 Nov 2026 11:06. Labour ₹115 per man-hour (BLDC ₹88), P&amp;F ₹5 per motor.</div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="ticker" aria-label="Key figures ticker" hidden><div class="track" id="ticker"></div></div>
+  <div class="topline">
+    
+    <div class="tright"><div class="active" id="active"></div></div>
+  </div>
+  <div id="cfNote"></div>
+  <div class="card tl" hidden>
+    <div class="tlh"><div class="tld" id="tlInfo"></div><button class="tbtn" id="tlAll" type="button">Full month</button></div>
+    <div class="tlbars" id="tlbars"></div>
+  </div>
+
+  <section class="grid" aria-label="Headline figures">
+    <div class="card hero c5">
+      <div class="hbrow">
+        <div class="gwrap"><canvas id="cGauge"></canvas><div class="gcen"><div class="k">Avg / motor</div><div class="gnum"><small>₹</small><span id="heroNum" data-key="heroNum" data-count="0">0</span></div><div class="gcap" id="gcap"></div></div></div>
+        <div class="hside"><div class="k">Average total cost per motor</div><div class="sub" id="heroSub"></div></div>
+      </div>
+      <div class="fh" id="heroFH"></div>
+    </div>
+    <div class="card c4 donutc">
+      <div class="ch" style="margin-bottom:6px"><div><h2>Where the cost goes</h2><p class="d">₹ per motor, weighted by motors</p></div></div>
+      <div class="plot mid"><canvas id="cDonut"></canvas><div class="empty" id="eDonut" hidden>No complete cost days for this selection.</div></div>
+    </div>
+    <div class="kstack c3" id="kstack"></div>
+  </section>
+
+  <section class="tiles" id="tiles" aria-label="Frame averages"></section>
+
+  <section class="grid">
+    <div class="card c12">
+      <div class="ch"><div><h2 id="heatTitle">Day by day</h2><p class="d">Every frame, every day. Darker means higher within that row. Click a cell to focus on that day.</p></div></div>
+      <div class="hmwrap" id="heat"></div>
+      <div class="hleg"><span>Lower</span><i></i><span>Higher</span><span style="margin-left:10px">Hatched = no production</span></div>
+    </div>
+    <div class="card c8">
+      <div class="ch"><div><h2 id="trendTitle">Daily cost per motor</h2><p class="d" id="trendSub"></p></div></div>
+      <div class="plot tall"><canvas id="cTrend"></canvas><div class="empty" id="eTrend" hidden>No cost data for this selection.</div></div>
+    </div>
+    <div class="card c4">
+      <div class="ch"><div><h2>Cost by frame</h2><p class="d">₹ per motor by part, weighted by motors</p></div></div>
+      <div class="plot tall"><canvas id="cComp"></canvas><div class="empty" id="eComp" hidden>No complete cost days for this selection.</div></div>
+    </div>
+    <div class="card c8">
+      <div class="ch"><div><h2 id="prodTitle">Daily production</h2><p class="d" id="prodSub">Motors per day, stacked by frame</p></div>
+        <select id="stage" aria-label="Production stage"><option value="asy">Assembly</option><option value="wdg">Winding</option></select></div>
+      <div class="plot"><canvas id="cProd"></canvas><div class="empty" id="eProd" hidden>No production for this selection.</div></div>
+    </div>
+    <div class="card c4">
+      <div class="ch"><div><h2>Cost build-up</h2><p class="d">How one motor's cost adds up</p></div></div>
+      <div class="plot"><canvas id="cWater"></canvas><div class="empty" id="eWater" hidden>No complete cost days for this selection.</div></div>
+    </div>
+    <div class="card c4">
+      <div class="ch"><div><h2>Volume vs cost</h2><p class="d" id="scSub">Each dot is one day</p></div></div>
+      <div class="plot mid"><canvas id="cScat"></canvas><div class="empty" id="eScat" hidden>No cost days for this selection.</div></div>
+    </div>
+    <div class="card c4">
+      <div class="ch"><div><h2>Man-hours</h2><p class="d">Attendance hours by department</p></div></div>
+      <div class="plot mid"><canvas id="cHrs"></canvas></div>
+    </div>
+    <div class="card c4">
+      <div class="ch"><div><h2 id="lbTitle">Highest &amp; lowest day</h2><p class="d">Total cost per motor, selected frames and dates</p></div></div>
+      <div class="lb" id="lb"></div>
+    </div>
+    <div class="card c8">
+      <div class="ch"><div><h2 id="lineTitle">Line-wise</h2><p class="d" id="lineSub"></p></div>
+        <div class="row">
+          <select id="lineDept" aria-label="Line department"><option value="PSC Winding">PSC Winding</option><option value="PSC Assy">PSC Assembly</option><option value="BLDC Assy">BLDC Assembly</option><option value="BLDC Winding">BLDC Winding</option></select>
+          <select id="lineMetric" aria-label="Line metric"><option value="cost">Cost / motor</option><option value="prod">Production</option></select>
+        </div></div>
+      <div class="plot"><canvas id="cLine"></canvas><div class="empty" id="eLine" hidden>No line data for this selection.</div></div>
+    </div>
+    <div class="card c4">
+      <div class="ch"><div><h2>What stands out</h2><p class="d">Written from the current selection</p></div></div>
+      <div id="ins"></div>
+    </div>
+    <div class="card c12">
+      <div class="ch"><div><h2 id="tblTitle">Daily detail</h2><p class="d">Motors and total cost per motor for the selected frames. Darker shading means higher cost within each column.</p></div></div>
+      <div class="tblwrap"><table id="tbl"></table></div>
+    </div>
+  </section>
+  <p class="foot">Cost is blank on days without production. A frame total is shown only when all of its parts exist that day. Line-wise cost shares each frame's allocated man-hours across lines by booked hours; Shell and Support are frame-level and not split by line. Chimney has no production data yet.</p>
+<section id="consView" aria-label="P&amp;F Cost">
+  <div class="topline"><div class="active" id="consActive"></div></div>
+  <div class="card" id="consEmpty" style="text-align:center;padding:56px 22px">
+    <div style="font-size:42px;line-height:1">⚡</div>
+    <h2 style="margin:12px 0 6px;font:700 22px var(--font-d);letter-spacing:.03em;text-transform:uppercase">P&amp;F Cost</h2>
+    <p id="consEmptyTxt" style="margin:0 auto;max-width:540px;color:var(--ink2)">No P&amp;F cost found. Put the Maintenance Daily MIS (Electric_Consumption folder) and run the update: the column "Total P&amp;F Cost (₹)" is read for every day.</p>
+  </div>
+  <div id="consData" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div id="consKpis" class="pfk"></div>
+    <div class="pfrec" id="pfRec"></div>
+    <section class="grid">
+      <div class="card c8"><div class="ch"><div><h2 id="pfStackT">Where the P&amp;F money goes</h2><p class="d">₹ allocated to each frame by production share (bars) and all-in P&amp;F cost per motor (line)</p></div></div><div class="plot tall"><canvas id="cPfStack"></canvas></div></div>
+      <div class="card c4"><div class="ch"><div><h2>Share of P&amp;F spend</h2><p class="d">Frames and cost of days with no production</p></div></div><div class="plot tall"><canvas id="cPfDonut"></canvas></div></div>
+      <div class="card c6"><div class="ch"><div><h2>P&amp;F cost per motor</h2><p class="d">₹ per motor, by frame and department (line view)</p></div></div><div class="plot"><canvas id="cPfPm"></canvas></div></div>
+      <div class="card c6"><div class="ch"><div><h2>Cumulative P&amp;F spend</h2><p class="d">Running total of ₹ across the selected days</p></div></div><div class="plot"><canvas id="cPfCum"></canvas></div></div>
+      <div class="card c12"><div class="ch"><div><h2>Daily all-in P&amp;F cost per motor</h2><p class="d">Total P&amp;F cost of the day ÷ motors made that day. Red = well above average, green = below. Days with no production are not shown (their cost is unallocated).</p></div></div><div class="plot tall"><canvas id="cPfDay"></canvas></div></div>
+      <div class="card c12"><div class="ch"><div><h2>P&amp;F cost per motor · frame summary</h2><p class="d">Each frame gets the day's P&amp;F cost in proportion to its share of that day's production</p></div><button type="button" class="xlsb" id="pfSumXls" title="Download Excel" aria-label="Download frame summary as Excel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9.5 14.5 12 17l2.5-2.5"/></svg></button></div><div class="tblwrap"><table id="pfSum"></table></div></div>
+      <div class="card c12"><div class="ch"><div><h2>Daily allocation</h2><p class="d">Total P&amp;F cost, production by frame and cost per motor, day by day</p></div><button type="button" class="xlsb" id="pfXls" title="Download Excel" aria-label="Download Daily allocation as Excel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9.5 14.5 12 17l2.5-2.5"/></svg></button></div><div class="tblwrap"><table id="pfDay"></table></div></div>
+    </section>
+  </div>
+</section>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const DATA = {"days":[{"date":"2026-10-01","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":48,"asy":112,"shl":16,"bldc":16,"cf":0,"sup":194},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-10-02","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":65},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-10-03","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":210},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-10-04","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":66,"asy":0,"shl":0,"bldc":82.5,"cf":0,"sup":213},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-10-05","wp":[1458,990,701],"ap":[1958,690,495],"bp":721,"bwp":707,"chp":880,"ww":[779,472.5,435],"aw":[408.8,308.1,560.6],"bww":59.2,"att":{"wdg":2362,"asy":2147,"shl":300,"bldc":424,"cf":424,"sup":676},"wc":[86.0541,76.8702,99.9454],"ac":[40.3522,86.3002,218.8854],"sc":[null,29.1139,29.1139],"su":[9.9259,33.8,54.9677,5.3911,4.4172],"bc":51.7503,"tot":[[126.4062,9.9259,136.3322,5,141.3322],[192.2843,33.8,226.0843,5,231.0843],[347.9447,54.9677,402.9124,5,407.9124],[51.7503,5.3911,57.1415,5,62.1415],[42.4,4.4172,46.8172,5,51.8172]]},{"date":"2026-10-06","wp":[2478,1491,1155],"ap":[1464,316,587],"bp":213,"bwp":1222,"chp":1316,"ww":[521.5889,356.12,480.065],"aw":[267.8,149.8,317.4],"bww":88.8,"att":{"wdg":2312,"asy":1728,"shl":341,"bldc":280,"cf":432,"sup":684.5},"wc":[41.2178,46.771,81.391],"ac":[49.4565,128.1678,146.1918],"sc":[null,43.4275,43.4275],"su":[15.8143,73.2665,39.4416,21.7392,3.5186],"bc":115.6808,"tot":[[90.6744,15.8143,106.4887,5,111.4887],[218.3663,73.2665,291.6328,5,296.6328],[271.0103,39.4416,310.4518,5,315.4518],[115.6808,21.7392,137.4199,5,142.4199],[28.8875,3.5186,32.4061,5,37.4061]]},{"date":"2026-10-07","wp":[4166,1222,1324],"ap":[2293,810,531],"bp":0,"bwp":1068,"chp":1035,"ww":[660,299.9667,472.8067],"aw":[420.46,212.67,309.35],"bww":96.2,"att":{"wdg":2352,"asy":1784,"shl":332,"bldc":184,"cf":440,"sup":701},"wc":[29.9077,46.3404,67.4145],"ac":[39.9155,57.1534,126.8166],"sc":[null,28.4713,28.4713],"su":[10.9866,31.1015,47.4429,null,4.868],"bc":null,"tot":[[69.8231,10.9866,80.8097,5,85.8097],[131.965,31.1015,163.0665,5,168.0665],[222.7024,47.4429,270.1453,5,275.1453],[null,null,null,null,null],[37.4106,4.868,42.2786,5,47.2786]]},{"date":"2026-10-08","wp":[3387,1228,1098],"ap":[2544,900,801],"bp":977,"bwp":1004,"chp":1510,"ww":[480.1067,434.09,480.0433],"aw":[472.98,207.48,440.5],"bww":96.2,"att":{"wdg":2305,"asy":1859,"shl":258,"bldc":344,"cf":440,"sup":739.5},"wc":[26.9497,67.2067,83.1207],"ac":[35.4579,43.9664,104.8819],"sc":[null,17.4427,17.4427],"su":[7.0376,29.8395,33.5275,9.1626,2.9642],"bc":30.9846,"tot":[[62.4076,7.0376,69.4452,5,74.4452],[128.6158,29.8395,158.4553,5,163.4553],[205.4453,33.5275,238.9728,5,243.9728],[30.9846,9.1626,40.1472,5,45.1472],[25.6424,2.9642,28.6066,5,33.6066]]},{"date":"2026-10-09","wp":[2755,1560,1430],"ap":[3320,1022,810],"bp":995,"bwp":814,"chp":1838,"ww":[480,464.9933,479.9133],"aw":[515.1,232.14,383.26],"bww":96.2,"att":{"wdg":2346,"asy":1786,"shl":260,"bldc":394,"cf":455,"sup":754},"wc":[32.9882,56.4367,63.5428],"ac":[28.1879,41.2675,85.9641],"sc":[null,16.321,16.321],"su":[5.4984,31.2581,33.8051,4.5866,2.483],"bc":34.8462,"tot":[[61.1761,5.4984,66.6745,5,71.6745],[114.0251,31.2581,145.2832,5,150.2832],[165.8279,33.8051,199.6329,5,204.6329],[34.8462,4.5866,39.4328,5,44.4328],[21.7845,2.483,24.2675,5,29.2675]]},{"date":"2026-10-10","wp":[2832,1759,1370],"ap":[2819,1843,756],"bp":1163,"bwp":1099,"chp":0,"ww":[479.36,472.5,479.9133],"aw":[472,355.05,401.25],"bww":88.8,"att":{"wdg":2280,"asy":1886.5,"shl":294,"bldc":423,"cf":98,"sup":716},"wc":[30.9975,49.192,64.1506],"ac":[29.5731,34.0263,93.744],"sc":[null,13.0088,13.0088],"su":[6.1493,16.46,34.3943,3.7263,null],"bc":32.0069,"tot":[[60.5706,6.1493,66.7199,5,71.7199],[96.2271,16.46,112.6871,5,117.6871],[170.9034,34.3943,205.2978,5,210.2978],[32.0069,3.7263,35.7332,5,40.7332],[null,null,null,null,null]]},{"date":"2026-10-11","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":16,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":64},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-10-12","wp":[3001,2185,1053],"ap":[3621,2421,1374],"bp":1455,"bwp":1721,"chp":2160,"ww":[543.8933,522.4915,389.8267],"aw":[541.1,511.6,553.7],"bww":118.4,"att":{"wdg":2348.5,"asy":2330,"shl":292,"bldc":412,"cf":462,"sup":713.5},"wc":[33.6133,44.3498,68.6605],"ac":[24.9258,35.2481,67.2184],"sc":[null,8.8485,8.8485],"su":[5.0356,13.1802,16.5883,3.133,2.1104],"bc":24.9182,"tot":[[58.5391,5.0356,63.5747,5,68.5747],[88.4464,13.1802,101.6266,5,106.6266],[144.7274,16.5883,161.3157,5,166.3157],[24.9182,3.133,28.0512,5,33.0512],[18.8222,2.1104,20.9326,5,25.9326]]},{"date":"2026-10-13","wp":[3222,2319,1363],"ap":[3349,2455,1116],"bp":1752,"bwp":2305,"chp":1885,"ww":[512.2133,520.92,480],"aw":[680.6,493.49,505.21],"bww":125.8,"att":{"wdg":2503,"asy":2644,"shl":330,"bldc":448,"cf":452,"sup":754},"wc":[30.2417,42.7319,66.9926],"ac":[36.7966,36.3964,81.9669],"sc":[null,10.6273,10.6273],"su":[5.4508,13.0125,24.5359,2.6048,2.4212],"bc":22.5023,"tot":[[67.0384,5.4508,72.4892,5,77.4892],[89.7555,13.0125,102.768,5,107.768],[159.5868,24.5359,184.1228,5,189.1228],[22.5023,2.6048,25.1071,5,30.1071],[21.1013,2.4212,23.5225,5,28.5225]]},{"date":"2026-10-14","wp":[3070,2274,937],"ap":[2559,1823,1019],"bp":1550,"bwp":2294,"chp":2056,"ww":[480,510.14,352.4617],"aw":[598.6,473.8,490.3],"bww":124.2,"att":{"wdg":2320,"asy":2393,"shl":296,"bldc":584,"cf":432,"sup":695.5},"wc":[31.07,44.5797,74.75],"ac":[41.1938,45.7692,84.733],"sc":[null,11.9775,11.9775],"su":[6.5801,16.1641,24.7867,2.7159,2.0475],"bc":33.1561,"tot":[[72.2638,6.5801,78.8438,5,83.8438],[102.3264,16.1641,118.4906,5,123.4906],[171.4604,24.7867,196.2471,5,201.2471],[33.1561,2.7159,35.872,5,40.872],[18.4903,2.0475,20.5377,5,25.5377]]},{"date":"2026-10-15","wp":[3554,1976,1476],"ap":[2656,1923,1428],"bp":1575,"bwp":1730,"chp":1030,"ww":[630,495.07,442.435],"aw":[598.6,477.47,577.53],"bww":127.25,"att":{"wdg":2365,"asy":2556.5,"shl":304,"bldc":558,"cf":458,"sup":751},"wc":[30.7569,43.471,52.0096],"ac":[40.0702,44.1448,71.9051],"sc":[null,10.4327,10.4327],"su":[7.3902,14.2901,19.2435,4.985,3.8113],"bc":31.1771,"tot":[[70.8272,7.3902,78.2174,5,83.2174],[98.0486,14.2901,112.3386,5,117.3386],[134.3473,19.2435,153.5909,5,158.5909],[31.1771,4.985,36.1621,5,41.1621],[39.1301,3.8113,42.9414,5,47.9414]]},{"date":"2026-10-16","wp":[3704,2126,1098],"ap":[3542,1510,1145],"bp":2147,"bwp":2482,"chp":0,"ww":[479.9644,472.3887,367.2933],"aw":[571.1,351.54,591.16],"bww":125.8,"att":{"wdg":2340,"asy":2452,"shl":282,"bldc":512,"cf":116,"sup":731},"wc":[26.4237,45.3098,68.2129],"ac":[30.034,43.3658,96.1722],"sc":[null,12.2147,12.2147],"su":[4.7468,16.7017,25.6967,3.9155,null],"bc":20.9856,"tot":[[56.4578,4.7468,61.2045,5,66.2045],[100.8903,16.7017,117.592,5,122.592],[176.5998,25.6967,202.2965,5,207.2965],[20.9856,3.9155,24.901,5,29.901],[null,null,null,null,null]]},{"date":"2026-10-17","wp":[3602,1949,1040],"ap":[3818,1232,1309],"bp":1403,"bwp":3653,"chp":0,"ww":[645,509.863,389.8483],"aw":[598.6,306,548.1],"bww":86.4,"att":{"wdg":2368,"asy":2304,"shl":312,"bldc":329,"cf":64,"sup":672},"wc":[31.5681,46.1184,66.0837],"ac":[28.596,45.3018,76.3703],"sc":[null,14.1204,14.1204],"su":[5.3266,19.8086,18.6434,2.8991,null],"bc":20.6358,"tot":[[60.1641,5.3266,65.4906,5,70.4906],[105.5405,19.8086,125.3492,5,130.3492],[156.5745,18.6434,175.2179,5,180.2179],[20.6358,2.8991,23.5348,5,28.5348],[null,null,null,null,null]]},{"date":"2026-10-18","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":8,"shl":8,"bldc":56,"cf":0,"sup":152.5},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-10-19","wp":[2927,1848,1284],"ap":[3185,1543,1140],"bp":1502,"bwp":2506,"chp":245,"ww":[375.0356,502.5433,435.765],"aw":[598.6,425.82,545.58],"bww":59.2,"att":{"wdg":2124,"asy":2326,"shl":280,"bldc":304,"cf":410,"sup":640},"wc":[23.83,50.5761,63.1192],"ac":[32.021,47.0184,81.5383],"sc":[null,12.0015,12.0015],"su":[4.6217,14.3098,25.8246,2.4501,15.0195],"bc":17.8109,"tot":[[55.851,4.6217,60.4727,5,65.4727],[109.596,14.3098,123.9058,5,128.9058],[156.6589,25.8246,182.4835,5,187.4835],[17.8109,2.4501,20.261,5,25.261],[147.2653,15.0195,162.2848,5,167.2848]]},{"date":"2026-10-20","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":16.5,"shl":0,"bldc":0,"cf":0,"sup":65.5},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-10-21","wp":[3995,1647,1714],"ap":[3811,1898,1172],"bp":485,"bwp":2347,"chp":0,"ww":[544,525.1833,516.98],"aw":[598.6,547.61,515.675],"bww":59.2,"att":{"wdg":2426,"asy":2407,"shl":296,"bldc":304,"cf":108,"sup":725},"wc":[23.951,56.0865,53.0522],"ac":[26.162,48.0561,73.2861],"sc":[null,11.0879,11.0879],"su":[4.6058,16.1839,22.465,9.0477,null],"bc":55.1588,"tot":[[50.1129,4.6058,54.7187,5,59.7187],[115.2305,16.1839,131.4144,5,136.4144],[137.4262,22.465,159.8912,5,164.8912],[55.1588,9.0477,64.2065,5,69.2065],[null,null,null,null,null]]},{"date":"2026-10-22","wp":[4125,1530,1318],"ap":[3557,1916,1359],"bp":0,"bwp":0,"chp":1200,"ww":[636,352.5867,479.7217],"aw":[598.6,335.3,555.3],"bww":0,"att":{"wdg":2208,"asy":2176,"shl":192,"bldc":128,"cf":416,"sup":694.5},"wc":[26.6632,39.8524,62.9439],"ac":[28.2785,29.4064,68.6613],"sc":[null,6.742,6.742],"su":[6.2371,11.579,22.8547,null,3.6977],"bc":null,"tot":[[54.9417,6.2371,61.1789,5,66.1789],[76.0007,11.579,87.5798,5,92.5798],[138.3472,22.8547,161.2019,5,166.2019],[null,null,null,null,null],[30.5067,3.6977,34.2044,5,39.2044]]},{"date":"2026-10-23","wp":[3872,1477,1282],"ap":[1862,1617,1297],"bp":221,"bwp":0,"chp":1783,"ww":[682.5,352.58,504.4627],"aw":[356.29,322.7,567.9],"bww":37,"att":{"wdg":2360,"asy":2224,"shl":184,"bldc":294,"cf":432,"sup":680.5},"wc":[31.0732,42.0819,69.368],"ac":[39.249,40.9349,89.8124],"sc":[null,7.2615,7.2615],"su":[11.0602,12.736,22.2295,18.6372,2.31],"bc":117.0679,"tot":[[70.3221,11.0602,81.3823,5,86.3823],[90.2783,12.736,103.0142,5,108.0142],[166.4419,22.2295,188.6714,5,193.6714],[117.0679,18.6372,135.705,5,140.705],[21.3214,2.31,23.6314,5,28.6314]]},{"date":"2026-10-24","wp":[4470,1319,1855],"ap":[3672,1900,1444],"bp":948,"bwp":1960,"chp":1975,"ww":[660,352.5,636.3167],"aw":[660.3,402.44,574.06],"bww":89.2,"att":{"wdg":2517,"asy":2328,"shl":322,"bldc":368,"cf":452,"sup":734},"wc":[25.9206,46.9162,60.2196],"ac":[29.412,34.6444,65.0242],"sc":[null,11.0736,11.0736],"su":[5.7469,13.3279,20.4595,4.452,2.1369],"bc":34.1603,"tot":[[55.3326,5.7469,61.0794,5,66.0794],[92.6342,13.3279,105.9621,5,110.9621],[136.3174,20.4595,156.7769,5,161.7769],[34.1603,4.452,38.6123,5,43.6123],[20.1397,2.1369,22.2766,5,27.2766]]},{"date":"2026-10-25","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":16,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":64},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-10-26","wp":[5181,1142,1869],"ap":[5095,2188,1604],"bp":2013,"bwp":1060,"chp":2258,"ww":[723.8933,329.9229,584.1083],"aw":[783.51,484.26,684.24],"bww":96.2,"att":{"wdg":2555,"asy":2686,"shl":328,"bldc":446,"cf":456,"sup":754},"wc":[25.0643,51.8252,56.0633],"ac":[24.3345,35.023,67.5034],"sc":[null,9.9473,9.9473],"su":[3.8679,10.8081,19.6577,3.9159,1.7455],"bc":19.4973,"tot":[[49.3988,3.8679,53.2667,5,58.2667],[96.7955,10.8081,107.6036,5,112.6036],[133.514,19.6577,153.1717,5,158.1717],[19.4973,3.9159,23.4132,5,28.4132],[17.7715,1.7455,19.5169,5,24.5169]]},{"date":"2026-10-27","wp":[4702,1343,1782],"ap":[4497,2157,1828],"bp":1866,"bwp":1090,"chp":2170,"ww":[739,330,541.6483],"aw":[769.5,474.805,759.9797],"bww":88.8,"att":{"wdg":2477,"asy":2707,"shl":342,"bldc":416,"cf":461,"sup":793.3},"wc":[27.7962,43.4571,53.7567],"ac":[26.5774,34.1894,64.5732],"sc":[null,9.8695,9.8695],"su":[4.6106,13.4574,15.8794,4.4446,1.911],"bc":19.6184,"tot":[[54.3736,4.6106,58.9842,5,63.9842],[87.5161,13.4574,100.9734,5,105.9734],[128.1995,15.8794,144.0789,5,149.0789],[19.6184,4.4446,24.063,5,29.063],[18.6949,1.911,20.6059,5,25.6059]]},{"date":"2026-10-28","wp":[4902,1481,1435],"ap":[4679,910,2435],"bp":1542,"bwp":1044,"chp":2025,"ww":[608,352.405,547.105],"aw":[769.5,234.27,962.96],"bww":88.8,"att":{"wdg":2522,"asy":2557,"shl":338,"bldc":398,"cf":462,"sup":786},"wc":[23.8623,45.7794,73.3502],"ac":[24.5889,38.491,59.128],"sc":[null,11.6203,11.6203],"su":[3.6797,23.6499,14.1414,8.3741,2.1255],"bc":22.7134,"tot":[[48.4513,3.6797,52.1309,5,57.1309],[95.8907,23.6499,119.5406,5,124.5406],[144.0986,14.1414,158.2399,5,163.2399],[22.7134,8.3741,31.0875,5,36.0875],[20.077,2.1255,22.2025,5,27.2025]]},{"date":"2026-10-29","wp":[2547,1588,1116],"ap":[4724,917,1793],"bp":1956,"bwp":1294,"chp":1596,"ww":[367.5733,344.805,375.1483],"aw":[779,186.38,746.12],"bww":88.92,"att":{"wdg":1962,"asy":2300,"shl":244,"bldc":448,"cf":376,"sup":734.5},"wc":[29.9414,45.0485,69.7422],"ac":[25.4845,31.4108,64.3098],"sc":[null,10.3542,10.3542],"su":[4.2072,21.6736,16.6269,5.0804,3.1132],"bc":20.1554,"tot":[[55.4259,4.2072,59.6331,5,64.6331],[86.8135,21.6736,108.4871,5,113.4871],[144.4063,16.6269,161.0332,5,166.0332],[20.1554,5.0804,25.2359,5,30.2359],[20.7318,3.1132,23.8451,5,28.8451]]},{"date":"2026-10-30","wp":[2850,1811,871],"ap":[4495,1842,1480],"bp":1019,"bwp":1038,"chp":1032,"ww":[480,441.5333,389.2417],"aw":[688.5,435.2189,693.73],"bww":88.8,"att":{"wdg":2244,"asy":2559,"shl":289,"bldc":412,"cf":442,"sup":698.5},"wc":[33.158,47.9996,87.982],"ac":[24.8016,38.2582,75.8988],"sc":[null,10.0045,10.0045],"su":[3.5741,15.2631,18.9964,3.9415,3.8917],"bc":35.58,"tot":[[57.9597,3.5741,61.5338,5,66.5338],[96.2623,15.2631,111.5254,5,116.5254],[173.8853,18.9964,192.8816,5,197.8816],[35.58,3.9415,39.5215,5,44.5215],[37.6899,3.8917,41.5816,5,46.5816]]},{"date":"2026-10-31","wp":[3568,1983,1193],"ap":[3851,2724,972],"bp":930,"bwp":1118,"chp":1530,"ww":[480.1422,494.9667,390.0217],"aw":[697,602.2222,383.0806],"bww":88.8,"att":{"wdg":2380,"asy":2459,"shl":306,"bldc":408,"cf":444,"sup":704},"wc":[26.9802,50.0442,65.5464],"ac":[30.4237,37.1622,66.2485],"sc":[null,9.5211,9.5211],"su":[4.4259,10.9498,26.3028,4.5818,2.7851],"bc":38.6065,"tot":[[57.4039,4.4259,61.8298,5,66.8298],[96.7276,10.9498,107.6774,5,112.6774],[141.316,26.3028,167.6188,5,172.6188],[38.6065,4.5818,43.1882,5,48.1882],[25.5373,2.7851,28.3224,5,33.3224]]},{"date":"2026-11-01","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":122,"asy":136.5,"shl":0,"bldc":80,"cf":16,"sup":410.5},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-02","wp":[4147,2923,1399],"ap":[3185,1960,1125],"bp":0,"bwp":0,"chp":380,"ww":[598.46,626.97,513.09],"aw":[695.48,418.72,524.93],"bww":28,"att":{"wdg":2751.5,"asy":2443.5,"shl":316,"bldc":162,"cf":418,"sup":761},"wc":[26.2658,39.0394,66.7519],"ac":[37.4347,36.6236,79.9918],"sc":[null,11.7796,11.7796],"su":[6.8693,16.7439,24.3097,null,14.3939],"bc":null,"tot":[[63.7005,6.8693,70.5698,5,75.5698],[87.4426,16.7439,104.1865,5,109.1865],[158.5233,24.3097,182.833,5,187.833],[null,null,null,null,null],[96.8,14.3939,111.1939,5,116.1939]]},{"date":"2026-11-03","wp":[4059,3236,1681],"ap":[3519,3210,901],"bp":1165,"bwp":2362,"chp":1138,"ww":[608.11,756.31,533.56],"aw":[615,681.72,410.66],"bww":88.8,"att":{"wdg":3022,"asy":2720,"shl":362,"bldc":446,"cf":454,"sup":787.5},"wc":[27.4322,42.7949,58.1192],"ac":[32.0178,38.9078,83.5023],"sc":[null,10.1265,10.1265],"su":[4.4757,11.0397,30.591,6.7597,3.46],"bc":33.6893,"tot":[[59.45,4.4757,63.9257,5,68.9257],[91.8292,11.0397,102.8689,5,107.8689],[151.748,30.591,182.339,5,187.339],[33.6893,6.7597,40.449,5,45.449],[35.1072,3.46,38.5672,5,43.5672]]},{"date":"2026-11-04","wp":[4345,4049,1844],"ap":[3366,2395,928],"bp":2444,"bwp":3152,"chp":2130,"ww":[608.21,835.96,608.07],"aw":[615,507.27,422.73],"bww":105.6,"att":{"wdg":3080,"asy":2442,"shl":358,"bldc":542,"cf":416,"sup":765},"wc":[24.1595,35.6334,56.9129],"ac":[33.2105,38.4989,82.8],"sc":[null,12.3894,12.3894],"su":[4.9784,13.9934,27.0859,3.4282,1.9668],"bc":19.5155,"tot":[[57.37,4.9784,62.3484,5,67.3484],[86.5217,13.9934,100.5151,5,105.5151],[152.1023,27.0859,179.1882,5,184.1882],[19.5155,3.4282,22.9437,5,27.9437],[17.1869,1.9668,19.1537,5,24.1537]]},{"date":"2026-11-05","wp":[4033,3886,1526],"ap":[4880,3686,1154],"bp":2121,"bwp":3007,"chp":2016,"ww":[608,864.64,608.07],"aw":[779,707.22,419.74],"bww":104.8,"att":{"wdg":3098.5,"asy":2896.5,"shl":352,"bldc":474,"cf":470,"sup":824.5},"wc":[25.8175,38.1041,68.2392],"ac":[27.8981,33.5318,63.5671],"sc":[null,8.3636,8.3636],"su":[3.3791,10.0658,21.4341,5.831,2.0449],"bc":19.6662,"tot":[[53.7156,3.3791,57.0947,5,62.0947],[79.9995,10.0658,90.0653,5,95.0653],[140.1699,21.4341,161.604,5,166.604],[19.6662,5.831,25.4972,5,30.4972],[20.5159,2.0449,22.5608,5,27.5608]]},{"date":"2026-11-06","wp":[4309,3781,1669],"ap":[3538,3721,1124],"bp":1708,"bwp":2603,"chp":1756,"ww":[607.87,864.59,583.89],"aw":[615,714.19,482.81],"bww":104.8,"att":{"wdg":3233,"asy":2864,"shl":328,"bldc":508,"cf":462,"sup":792.5},"wc":[25.506,41.3436,63.2532],"ac":[31.5958,34.8873,78.0769],"sc":[null,7.7853,7.7853],"su":[4.6836,10.0198,22.1136,4.8508,2.3591],"bc":26.1733,"tot":[[57.1018,4.6836,61.7854,5,66.7854],[84.0162,10.0198,94.036,5,99.036],[149.1154,22.1136,171.229,5,176.229],[26.1733,4.8508,31.0241,5,36.0241],[23.1526,2.3591,25.5117,5,30.5117]]},{"date":"2026-11-07","wp":[1973,1921,694],"ap":[2058,2202,812],"bp":834,"bwp":1428,"chp":315,"ww":[318.72,454.94,271.28],"aw":[381.5,387.17,321.58],"bww":65.2,"att":{"wdg":2728,"asy":2528,"shl":320,"bldc":472,"cf":464,"sup":720},"wc":[48.499,71.1013,117.357],"ac":[49.4308,46.8849,105.6044],"sc":[null,12.2097,12.2097],"su":[7.6635,14.3246,33.9901,4.7276,12.517],"bc":49.8034,"tot":[[97.9298,7.6635,105.5933,5,110.5933],[130.1959,14.3246,144.5205,5,149.5205],[235.1711,33.9901,269.1612,5,274.1612],[49.8034,4.7276,54.531,5,59.531],[129.6254,12.517,142.1424,5,147.1424]]},{"date":"2026-11-08","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":48.5},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-09","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":48.5},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-10","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":60.5},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-11","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":81.5},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-12","wp":[0,0,0],"ap":[2498,2837,870],"bp":0,"bwp":0,"chp":1325,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":0},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-13","wp":[0,0,0],"ap":[3633,2845,910],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":0},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-14","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":0},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-15","wp":[0,0,0],"ap":[0,0,0],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":0},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-16","wp":[0,0,0],"ap":[3278,2456,1338],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":0},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]},{"date":"2026-11-17","wp":[0,0,0],"ap":[3637,3133,1426],"bp":0,"bwp":0,"chp":0,"ww":[0,0,0],"aw":[0,0,0],"bww":0,"att":{"wdg":0,"asy":0,"shl":0,"bldc":0,"cf":0,"sup":0},"wc":[null,null,null],"ac":[null,null,null],"sc":[null,null,null],"su":[null,null,null,null,null],"bc":null,"tot":[[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null],[null,null,null,null,null]]}],"lines":[["BLDC Winding","2026-10-05",1,"Chimney",710,29.6,null,null],["PSC Assy","2026-10-05",1,"C",1045,189.8,318.9829,36683.0286],["PSC Winding","2026-10-05",1,"E",398,150,210.08,24159.2055],["PSC Assy","2026-10-05",10,"E",284,131.4,220.8343,25395.9429],["PSC Winding","2026-10-05",10,"C",548,285,399.1521,45902.4904],["PSC Assy","2026-10-05",2,"E",367,138.7,233.1029,26806.8286],["PSC Winding","2026-10-05",2,"E",457,150,210.08,24159.2055],["BLDC Assy","2026-10-05",3,"BLDC",721,118.4,424,37312],["BLDC Winding","2026-10-05",3,"BLDC-IDU",707,29.6,null,null],["PSC Assy","2026-10-05",3,"H",127,124.1,208.5657,23985.0571],["PSC Winding","2026-10-05",3,"H",261,180,252.0961,28991.0465],["PSC Winding","2026-10-05",4,"H",255,90,126.048,14495.5233],["PSC Assy","2026-10-05",5,"H",171,167.9,282.1771,32450.3714],["PSC Assy","2026-10-05",6,"C",913,219,368.0571,42326.5714],["PSC Winding","2026-10-05",6,"H",185,165,231.0881,26575.126],["PSC Assy","2026-10-05",7,"H",110,167.9,282.1771,32450.3714],["PSC Winding","2026-10-05",7,"E",135,172.5,241.5921,27783.0863],["PSC Assy","2026-10-05",8,"E",39,38,63.8638,7344.3366],["PSC Assy","2026-10-05",8,"H",87,100.7,169.2391,19462.492],["PSC Winding","2026-10-05",8,"C",470,247,345.9318,39782.1583],["PSC Winding","2026-10-05",9,"C",440,247,345.9318,39782.1583],["BLDC Assy","2026-10-06",1,"BLDC",213,111,280,24640],["BLDC Winding","2026-10-06",1,"Chimney",874,29.6,null,null],["PSC Assy","2026-10-06",1,"C",1042,189.8,446.2237,51315.7224],["PSC Winding","2026-10-06",1,"E",598,150,255.4181,29373.0792],["PSC Winding","2026-10-06",10,"C",510,131.5889,224.0679,25767.8057],["BLDC Winding","2026-10-06",2,"BLDC-IDU",210,5.6,null,null],["BLDC Winding","2026-10-06",2,"Chimney",190,24,null,null],["PSC Assy","2026-10-06",2,"E",268,131.4,308.9241,35526.2694],["PSC Winding","2026-10-06",2,"E",650,150,255.4181,29373.0792],["BLDC Winding","2026-10-06",3,"BLDC-IDU",1012,29.6,null,null],["PSC Winding","2026-10-06",3,"H",444,195.065,332.1542,38197.7313],["PSC Winding","2026-10-06",4,"H",285,90,153.2508,17623.8475],["PSC Assy","2026-10-06",5,"H",296,167.9,394.7363,45394.6776],["PSC Assy","2026-10-06",6,"C",422,78,183.3796,21088.6531],["PSC Winding","2026-10-06",6,"H",426,195,332.0435,38185.003],["PSC Assy","2026-10-06",7,"E",48,18.4,43.2588,4974.7592],["PSC Assy","2026-10-06",7,"H",291,149.5,351.4776,40419.9184],["PSC Winding","2026-10-06",7,"E",243,56.12,95.5604,10989.448],["PSC Winding","2026-10-06",8,"C",918,195,332.0435,38185.003],["PSC Winding","2026-10-06",9,"C",1050,195,332.0435,38185.003],["BLDC Winding","2026-10-07",1,"Chimney",902,29.6,null,null],["PSC Assy","2026-10-07",1,"C",1608,299.3,566.5385,65151.9268],["PSC Winding","2026-10-07",1,"E",746,149.9667,246.181,28310.8172],["PSC Winding","2026-10-07",10,"C",1550,240,393.9772,45307.3759],["BLDC Winding","2026-10-07",2,"Chimney",698,37,null,null],["PSC Assy","2026-10-07",2,"E",409,138.7,262.5422,30192.3563],["PSC Winding","2026-10-07",2,"E",476,150,246.2357,28317.1099],["BLDC Winding","2026-10-07",3,"BLDC-IDU",1068,29.6,null,null],["PSC Winding","2026-10-07",3,"H",364,195.065,320.2132,36824.5137],["PSC Winding","2026-10-07",4,"H",331,90.2,148.0698,17028.0221],["PSC Assy","2026-10-07",5,"H",269,167.9,317.8143,36548.6419],["PSC Assy","2026-10-07",6,"C",685,121.16,229.3411,26374.2314],["PSC Assy","2026-10-07",6,"E",296,47.52,89.9496,10344.2017],["PSC Winding","2026-10-07",6,"H",629,187.5417,307.8631,35404.2533],["PSC Assy","2026-10-07",7,"E",105,26.45,50.0666,5757.6628],["PSC Assy","2026-10-07",7,"H",262,141.45,267.7476,30790.9791],["PSC Winding","2026-10-07",8,"C",1036,180,295.4829,33980.5319],["PSC Winding","2026-10-07",9,"C",1580,240,393.9772,45307.3759],["BLDC Assy","2026-10-08",1,"BLDC",257,32,92.973,8181.6216],["BLDC Winding","2026-10-08",1,"Chimney",910,29.6,null,null],["PSC Assy","2026-10-08",1,"C",1763,299.3,496.3591,57081.2968],["PSC Winding","2026-10-08",1,"E",460,150,247.9846,28518.225],["PSC Winding","2026-10-08",10,"C",1293,240,396.7753,45629.16],["BLDC Winding","2026-10-08",2,"Chimney",917,37,null,null],["PSC Assy","2026-10-08",2,"E",607,138.7,230.0201,26452.3083],["PSC Winding","2026-10-08",2,"E",457,150,247.9846,28518.225],["BLDC Assy","2026-10-08",3,"BLDC",720,86.4,251.027,22090.3784],["BLDC Winding","2026-10-08",3,"BLDC-IDU",1004,29.6,null,null],["PSC Winding","2026-10-08",3,"H",288,195.065,322.4874,37086.0504],["PSC Winding","2026-10-08",4,"H",338,90,148.7907,17110.935],["PSC Assy","2026-10-08",5,"H",343,190.9,316.5885,36407.6831],["PSC Assy","2026-10-08",6,"C",781,173.68,288.0309,33123.5537],["PSC Assy","2026-10-08",6,"E",74,11.78,19.536,2246.6344],["PSC Winding","2026-10-08",6,"H",472,194.9783,322.3441,37069.5732],["PSC Assy","2026-10-08",7,"H",339,167.9,278.4454,32021.2153],["PSC Winding","2026-10-08",7,"E",311,134.09,221.6817,25493.3919],["PSC Assy","2026-10-08",8,"E",219,57,94.5288,10870.8116],["PSC Assy","2026-10-08",8,"H",119,81.7,135.4913,15581.4967],["PSC Winding","2026-10-08",9,"C",2094,240.1067,396.9516,45649.4396],["BLDC Winding","2026-10-09",1,"Chimney",1060,29.6,null,null],["PSC Assy","2026-10-09",1,"C",1920,299.3,472.8437,54377.0252],["PSC Winding","2026-10-09",1,"E",515,149.9333,246.8538,28388.185],["PSC Winding","2026-10-09",10,"C",1505,240,395.1417,45441.2921],["BLDC Winding","2026-10-09",2,"Chimney",1028,37,null,null],["PSC Assy","2026-10-09",2,"E",685,138.7,219.1227,25199.1092],["PSC Winding","2026-10-09",2,"E",521,135.06,222.366,25572.0871],["BLDC Assy","2026-10-09",3,"BLDC",995,118.4,394,34672],["BLDC Winding","2026-10-09",3,"BLDC-IDU",814,29.6,null,null],["PSC Assy","2026-10-09",3,"E",100,25.5,40.2857,4632.8571],["PSC Assy","2026-10-09",3,"H",212,98.6,155.7714,17913.7143],["PSC Winding","2026-10-09",3,"H",622,194.935,320.9456,36908.7428],["PSC Winding","2026-10-09",4,"H",371,90,148.1781,17040.4845],["PSC Assy","2026-10-09",5,"E",66,12.65,19.9849,2298.2605],["PSC Assy","2026-10-09",5,"H",410,201.25,317.9412,36563.2353],["PSC Assy","2026-10-09",6,"C",1400,215.8,340.9277,39206.6891],["PSC Winding","2026-10-09",6,"H",437,194.9783,321.0169,36916.9475],["PSC Winding","2026-10-09",7,"E",524,180,296.3563,34080.969],["PSC Assy","2026-10-09",8,"E",171,55.29,87.3489,10045.1244],["PSC Assy","2026-10-09",8,"H",188,83.41,131.7738,15153.9849],["PSC Winding","2026-10-09",9,"C",1250,240,395.1417,45441.2921],["BLDC Winding","2026-10-10",1,"Chimney",1034,29.6,null,null],["PSC Assy","2026-10-10",1,"C",1424,189.8,291.5067,33523.2724],["PSC Winding","2026-10-10",1,"E",578,150,238.8646,27469.4318],["PSC Winding","2026-10-10",10,"C",1622,239.36,381.1642,43833.888],["BLDC Winding","2026-10-10",2,"Chimney",1075,29.6,null,null],["PSC Assy","2026-10-10",2,"E",744,138.7,213.0241,24497.776],["PSC Winding","2026-10-10",2,"E",608,135,214.9782,24722.4887],["BLDC Assy","2026-10-10",3,"BLDC",1163,118.4,423,37224],["BLDC Winding","2026-10-10",3,"BLDC-IDU",1099,29.6,null,null],["PSC Assy","2026-10-10",3,"H",286,124.1,190.6005,21919.0627],["PSC Winding","2026-10-10",3,"H",560,194.87,310.317,35686.4546],["PSC Winding","2026-10-10",4,"H",349,90,143.3188,16481.6591],["PSC Assy","2026-10-10",5,"E",20,3.91,6.0052,690.6006],["PSC Assy","2026-10-10",5,"H",347,163.99,251.8661,28964.6019],["PSC Assy","2026-10-10",6,"C",1395,282.2,433.4204,49843.3481],["PSC Winding","2026-10-10",6,"H",461,195.0433,310.593,35718.197],["PSC Assy","2026-10-10",7,"E",285,54.74,84.0731,9668.4085],["PSC Assy","2026-10-10",7,"H",123,113.16,173.7982,19986.794],["PSC Winding","2026-10-10",7,"E",573,187.5,298.5808,34336.7898],["PSC Assy","2026-10-10",8,"E",794,157.7,242.2055,27853.6357],["PSC Winding","2026-10-10",9,"C",1210,240,382.1834,43951.091],["BLDC Assy","2026-10-12",1,"BLDC",1455,162,412,36256],["BLDC Winding","2026-10-12",1,"BLDC-IDU",88,2,null,null],["BLDC Winding","2026-10-12",1,"Chimney",1988,57.2,null,null],["PSC Assy","2026-10-12",1,"C",2108,299.3,434.1191,49923.7021],["PSC Winding","2026-10-12",1,"E",576,149.92,241.783,27805.0401],["PSC Assy","2026-10-12",10,"E",496,126,182.7565,21016.9945],["PSC Winding","2026-10-12",10,"C",1553,303.8933,490.1029,56361.8352],["BLDC Winding","2026-10-12",2,"BLDC-ODU",647,28.4,null,null],["BLDC Winding","2026-10-12",2,"Chimney",55,1.2,null,null],["PSC Assy","2026-10-12",2,"E",961,176.7,256.2942,29473.8328],["PSC Winding","2026-10-12",2,"E",764,135.0715,217.8361,25051.1478],["BLDC Winding","2026-10-12",3,"BLDC-IDU",986,29.6,null,null],["PSC Assy","2026-10-12",3,"H",467,158.1,229.3159,26371.3241],["PSC Winding","2026-10-12",3,"H",591,194.935,314.3807,36153.7853],["PSC Assy","2026-10-12",5,"H",547,213.9,310.2509,35678.8502],["PSC Assy","2026-10-12",6,"C",1513,241.8,350.7184,40332.6133],["PSC Winding","2026-10-12",6,"H",462,194.8917,314.3109,36145.7485],["PSC Assy","2026-10-12",7,"E",77,32.2,46.7044,5371.0097],["PSC Assy","2026-10-12",7,"H",360,181.7,263.5464,30307.8405],["PSC Winding","2026-10-12",7,"E",845,237.5,383.0273,44048.1392],["PSC Assy","2026-10-12",8,"E",887,176.7,256.2942,29473.8328],["PSC Winding","2026-10-12",9,"C",1448,240,387.0592,44511.8038],["BLDC Assy","2026-10-13",1,"BLDC",1752,169.2,448,39424],["BLDC Winding","2026-10-13",1,"Chimney",2156,66.6,null,null],["PSC Assy","2026-10-13",1,"C",2140,381.3,600.3437,69039.5272],["PSC Winding","2026-10-13",1,"E",785,150,248.1275,28534.6632],["PSC Winding","2026-10-13",10,"C",1924,272.1067,450.1143,51763.1472],["BLDC Winding","2026-10-13",2,"BLDC-ODU",1098,29.6,null,null],["PSC Assy","2026-10-13",2,"E",742,138.7,218.3784,25113.5128],["PSC Winding","2026-10-13",2,"E",809,150.0067,248.1385,28535.9314],["BLDC Winding","2026-10-13",3,"BLDC-IDU",1207,29.6,null,null],["PSC Assy","2026-10-13",3,"H",223,124.1,195.3912,22469.9851],["PSC Winding","2026-10-13",3,"H",600,195,322.5658,37095.0621],["PSC Winding","2026-10-13",4,"H",206,90,148.8765,17120.7979],["PSC Assy","2026-10-13",5,"H",485,213.9,336.7782,38729.4909],["PSC Assy","2026-10-13",6,"C",1209,299.3,471.2375,54192.317],["PSC Winding","2026-10-13",6,"H",557,195,322.5658,37095.0621],["PSC Assy","2026-10-13",7,"E",117,46.69,73.5118,8453.8566],["PSC Assy","2026-10-13",7,"H",408,167.21,263.2664,30275.6343],["PSC Winding","2026-10-13",7,"E",725,220.9133,365.4312,42024.5837],["PSC Assy","2026-10-13",8,"E",837,176.7,278.2081,31993.9272],["PSC Assy","2026-10-13",9,"E",759,131.4,206.8848,23791.7489],["PSC Winding","2026-10-13",9,"C",1298,240.1067,397.1805,45675.7524],["BLDC Winding","2026-10-14",1,"BLDC-ODU",21,0.8,null,null],["BLDC Winding","2026-10-14",1,"Chimney",2167,64.2,null,null],["PSC Assy","2026-10-14",1,"C",1669,299.3,458.3253,52707.4061],["PSC Winding","2026-10-14",1,"E",742,157.57,272.2791,31312.0988],["PSC Assy","2026-10-14",10,"E",539,131.4,201.216,23139.8368],["PSC Winding","2026-10-14",10,"C",1526,240.1067,414.9015,47713.6743],["BLDC Winding","2026-10-14",2,"BLDC-ODU",1103,29.6,null,null],["PSC Assy","2026-10-14",2,"E",687,138.7,212.3946,24425.3833],["PSC Winding","2026-10-14",2,"E",776,157.57,272.2791,31312.0988],["BLDC Assy","2026-10-14",3,"BLDC",1550,178.6,584,51392],["BLDC Winding","2026-10-14",3,"BLDC-IDU",1170,29.6,null,null],["PSC Assy","2026-10-14",3,"H",211,124.1,190.0373,21854.2903],["PSC Winding","2026-10-14",3,"H",537,194.8917,336.7705,38728.6102],["PSC Assy","2026-10-14",5,"H",389,167.9,257.1093,29567.5693],["PSC Assy","2026-10-14",6,"C",890,299.3,458.3253,52707.4061],["PSC Winding","2026-10-14",6,"H",400,157.57,272.2791,31312.0988],["PSC Assy","2026-10-14",7,"H",345,167.9,257.1093,29567.5693],["PSC Winding","2026-10-14",7,"E",756,195,336.9577,38750.1381],["PSC Assy","2026-10-14",8,"E",360,108.3,165.8424,19071.8746],["PSC Assy","2026-10-14",8,"H",74,30.4,46.5522,5353.5087],["PSC Assy","2026-10-14",9,"E",237,95.4,146.0883,16800.1555],["PSC Winding","2026-10-14",9,"C",1544,239.8933,414.5329,47671.281],["BLDC Assy","2026-10-15",1,"BLDC",1000,150.4,321.0528,28252.6458],["BLDC Winding","2026-10-15",1,"Chimney",2047,67,null,null],["PSC Assy","2026-10-15",1,"C",1377,299.3,462.724,53213.263],["PSC Winding","2026-10-15",1,"E",621,157.57,237.7364,27339.69],["PSC Assy","2026-10-15",10,"E",35,19,29.3744,3378.0555],["PSC Winding","2026-10-15",10,"C",934,225,339.4726,39039.3492],["BLDC Assy","2026-10-15",2,"BLDC",575,111,236.9472,20851.3542],["BLDC Winding","2026-10-15",2,"BLDC-IDU",6,0.05,null,null],["BLDC Winding","2026-10-15",2,"BLDC-ODU",884,29.8,null,null],["BLDC Winding","2026-10-15",2,"Chimney",120,0.8,null,null],["PSC Assy","2026-10-15",2,"E",840,176.7,273.1819,31415.9157],["PSC Winding","2026-10-15",2,"E",768,142.5,214.9993,24724.9211],["BLDC Winding","2026-10-15",3,"BLDC-IDU",840,29.6,null,null],["PSC Assy","2026-10-15",3,"H",281,124.1,191.8612,22064.0359],["PSC Winding","2026-10-15",3,"H",608,194.935,294.1115,33822.8246],["PSC Winding","2026-10-15",4,"H",421,90,135.789,15615.7397],["PSC Assy","2026-10-15",5,"H",530,213.9,330.6938,38029.7927],["PSC Assy","2026-10-15",6,"C",1279,299.3,462.724,53213.263],["PSC Winding","2026-10-15",6,"H",447,157.5,237.6308,27327.5444],["PSC Assy","2026-10-15",7,"H",444,167.9,259.5769,29851.3427],["PSC Winding","2026-10-15",7,"E",587,195,294.2096,33834.1026],["PSC Assy","2026-10-15",8,"E",368,105.07,162.4404,18680.6467],["PSC Assy","2026-10-15",8,"H",173,71.63,110.7415,12735.2691],["PSC Winding","2026-10-15",8,"C",970,165,248.9466,28628.856],["PSC Assy","2026-10-15",9,"E",680,176.7,273.1819,31415.9157],["PSC Winding","2026-10-15",9,"C",1650,240,362.1041,41641.9724],["BLDC Assy","2026-10-16",1,"BLDC",1135,118.4,264.2581,23254.7097],["BLDC Winding","2026-10-16",1,"BLDC-IDU",30,0.8,null,null],["BLDC Winding","2026-10-16",1,"BLDC-ODU",9,0.2,null,null],["BLDC Winding","2026-10-16",1,"Chimney",2412,65.6,null,null],["PSC Assy","2026-10-16",1,"C",2421,381.3,617.6163,71025.8779],["PSC Winding","2026-10-16",1,"E",582,127.4717,226.033,25993.7998],["PSC Winding","2026-10-16",10,"C",1901,239.9644,425.5055,48933.1307],["BLDC Assy","2026-10-16",2,"BLDC",1012,111,247.7419,21801.2903],["BLDC Winding","2026-10-16",2,"BLDC-ODU",1193,29.6,null,null],["PSC Assy","2026-10-16",2,"E",880,176.7,286.2124,32914.4312],["PSC Winding","2026-10-16",2,"E",816,157.542,279.3538,32125.6897],["BLDC Winding","2026-10-16",3,"BLDC-IDU",1250,29.6,null,null],["PSC Assy","2026-10-16",3,"H",156,124.1,201.0128,23116.4738],["PSC Winding","2026-10-16",3,"H",656,194.87,345.5439,39737.5503],["PSC Assy","2026-10-16",5,"H",523,167.9,271.9585,31275.2292],["PSC Assy","2026-10-16",6,"C",1121,189.8,307.4314,35354.6069],["PSC Winding","2026-10-16",6,"H",442,172.4233,305.7414,35160.2652],["PSC Assy","2026-10-16",7,"H",276,167.9,271.9585,31275.2292],["PSC Winding","2026-10-16",7,"E",728,187.375,332.2538,38209.183],["PSC Assy","2026-10-16",8,"E",200,52.44,84.9405,9768.1538],["PSC Assy","2026-10-16",8,"H",78,86.26,139.7209,16067.9051],["PSC Assy","2026-10-16",9,"E",430,122.4,198.2592,22799.8098],["PSC Assy","2026-10-16",9,"H",112,45,72.8894,8382.283],["PSC Winding","2026-10-16",9,"C",1803,240,425.5685,48940.3812],["BLDC Assy","2026-10-17",1,"BLDC",1403,109.75,329,28952],["PSC Assy","2026-10-17",1,"C",2159,299.3,474.6935,54589.7487],["PSC Winding","2026-10-17",1,"E",656,157.458,241.3788,27758.5602],["PSC Assy","2026-10-17",10,"E",203,43.2,68.5157,7879.3089],["PSC Assy","2026-10-17",10,"H",120,88.2,139.8863,16086.9223],["PSC Winding","2026-10-17",10,"C",1405,240,367.9134,42310.0411],["BLDC Winding","2026-10-17",2,"BLDC-ODU",1275,29.6,null,null],["PSC Assy","2026-10-17",2,"E",588,131.4,208.402,23966.2312],["PSC Winding","2026-10-17",2,"E",647,157.535,241.4968,27772.1347],["BLDC Winding","2026-10-17",3,"BLDC-IDU",2378,56.8,null,null],["PSC Assy","2026-10-17",3,"H",348,124.1,196.8241,22634.7739],["PSC Winding","2026-10-17",3,"H",565,194.87,298.7304,34353.9905],["PSC Assy","2026-10-17",5,"H",434,167.9,266.2915,30623.5176],["PSC Assy","2026-10-17",6,"C",1659,299.3,474.6935,54589.7487],["PSC Winding","2026-10-17",6,"H",475,194.9783,298.8964,34373.0887],["PSC Assy","2026-10-17",7,"H",407,167.9,266.2915,30623.5176],["PSC Winding","2026-10-17",7,"E",646,194.87,298.7304,34353.9905],["PSC Winding","2026-10-17",8,"C",818,165,252.9405,29088.1533],["PSC Assy","2026-10-17",9,"E",441,131.4,208.402,23966.2312],["PSC Winding","2026-10-17",9,"C",1379,240,367.9134,42310.0411],["BLDC Assy","2026-10-19",1,"BLDC",1502,130.9,304,26752],["PSC Assy","2026-10-19",1,"C",1959,299.3,443.4215,50993.4758],["PSC Winding","2026-10-19",1,"E",636,157.5,254.7162,29292.3661],["PSC Assy","2026-10-19",10,"E",335,112.86,167.2053,19228.6124],["PSC Assy","2026-10-19",10,"H",132,54.54,80.8026,9292.2959],["PSC Winding","2026-10-19",10,"C",1459,195.1156,315.5498,36288.2304],["BLDC Winding","2026-10-19",2,"BLDC-ODU",1275,29.6,null,null],["PSC Assy","2026-10-19",2,"E",833,176.7,261.7861,30105.4032],["PSC Winding","2026-10-19",2,"E",736,150,242.5869,27897.4915],["BLDC Winding","2026-10-19",3,"BLDC-IDU",667,16,null,null],["BLDC Winding","2026-10-19",3,"BLDC-ODU",564,13.6,null,null],["PSC Assy","2026-10-19",3,"H",269,124.1,183.8577,21143.6363],["PSC Winding","2026-10-19",3,"H",587,187.525,303.274,34876.514],["PSC Winding","2026-10-19",4,"H",300,90.04,145.6168,16745.9342],["PSC Assy","2026-10-19",5,"H",286,167.9,248.7487,28606.0962],["PSC Assy","2026-10-19",6,"C",1226,299.3,443.4215,50993.4758],["PSC Winding","2026-10-19",6,"H",397,158.2,255.8483,29422.5544],["PSC Assy","2026-10-19",7,"H",403,167.9,248.7487,28606.0962],["PSC Winding","2026-10-19",7,"E",476,195.0433,315.433,36274.7982],["PSC Assy","2026-10-19",9,"E",375,136.26,201.8731,23215.406],["PSC Assy","2026-10-19",9,"H",50,31.14,46.1348,5305.5023],["PSC Winding","2026-10-19",9,"C",1468,179.92,290.9749,33462.1112],["BLDC Assy","2026-10-21",1,"BLDC",485,125.8,304,26752],["PSC Assy","2026-10-21",1,"C",2167,299.3,433.4928,49851.6663],["PSC Winding","2026-10-21",1,"E",609,150.0667,229.5235,26395.2006],["PSC Assy","2026-10-21",10,"E",309,167.4,242.4547,27882.2885],["PSC Winding","2026-10-21",10,"C",2170,304,464.9609,53470.5085],["BLDC Winding","2026-10-21",2,"BLDC-ODU",1141,29.6,null,null],["PSC Assy","2026-10-21",2,"E",815,176.7,255.9244,29431.3045],["PSC Winding","2026-10-21",2,"E",699,150.0667,229.5235,26395.2006],["BLDC Winding","2026-10-21",3,"BLDC-ODU",1206,29.6,null,null],["PSC Assy","2026-10-21",3,"H",324,124.1,179.7409,20670.2031],["PSC Winding","2026-10-21",3,"H",899,247,377.7808,43444.7882],["PSC Winding","2026-10-21",4,"H",368,90,137.6529,15830.0848],["PSC Assy","2026-10-21",5,"H",486,213.785,309.6366,35608.2141],["PSC Assy","2026-10-21",6,"C",1644,299.3,433.4928,49851.6663],["PSC Winding","2026-10-21",6,"H",447,179.98,275.2752,31656.6517],["PSC Assy","2026-10-21",7,"E",58,36.11,52.3001,6014.5128],["PSC Assy","2026-10-21",7,"H",362,177.79,257.5031,29612.8559],["PSC Winding","2026-10-21",7,"E",339,225.05,344.2088,39584.0064],["PSC Assy","2026-10-21",9,"E",716,167.4,242.4547,27882.2885],["PSC Winding","2026-10-21",9,"C",1825,240,367.0744,42213.5593],["PSC Assy","2026-10-22",1,"C",2034,299.3,437.3333,50293.3333],["PSC Assy","2026-10-22",10,"E",197,36,52.6027,6049.3151],["PSC Assy","2026-10-22",10,"H",235,95.4,139.3973,16030.6849],["PSC Winding","2026-10-22",10,"C",1850,240,360.9051,41504.0892],["PSC Assy","2026-10-22",2,"E",770,138.7,202.6667,23306.6667],["PSC Winding","2026-10-22",2,"E",773,157.5,236.844,27237.0585],["PSC Assy","2026-10-22",3,"H",269,124.1,181.3333,20853.3333],["PSC Winding","2026-10-22",3,"H",576,194.87,293.0399,33699.5911],["PSC Winding","2026-10-22",4,"H",257,89.96,135.2793,15557.1161],["PSC Assy","2026-10-22",5,"H",494,167.9,245.3333,28213.3333],["PSC Assy","2026-10-22",6,"C",1523,299.3,437.3333,50293.3333],["PSC Winding","2026-10-22",6,"H",485,194.8917,293.0725,33703.338],["PSC Assy","2026-10-22",7,"H",361,167.9,245.3333,28213.3333],["PSC Winding","2026-10-22",7,"E",757,195.0867,293.3657,33737.06],["PSC Winding","2026-10-22",8,"C",628,156,234.5883,26977.658],["PSC Assy","2026-10-22",9,"E",949,160.6,234.6667,26986.6667],["PSC Winding","2026-10-22",9,"C",1647,240,360.9051,41504.0892],["BLDC Winding","2026-10-23",1,"Chimney",1050,37,null,null],["PSC Assy","2026-10-23",1,"C",1445,299.3,533.8428,61391.9175],["PSC Assy","2026-10-23",10,"E",40,23.4,41.7371,4799.769],["PSC Assy","2026-10-23",10,"H",234,108,192.6329,22152.7801],["PSC Winding","2026-10-23",10,"C",1552,240,367.9015,42308.6683],["BLDC Assy","2026-10-23",2,"BLDC",221,125.8,294,25872],["PSC Assy","2026-10-23",2,"E",596,138.7,247.3905,28449.913],["PSC Winding","2026-10-23",2,"E",820,157.58,241.558,27779.1665],["PSC Assy","2026-10-23",3,"H",253,124.1,221.3494,25455.1853],["PSC Winding","2026-10-23",3,"H",672,211.876,324.7895,37350.7975],["PSC Winding","2026-10-23",4,"H",239,97.5,149.46,17187.8965],["PSC Assy","2026-10-23",5,"H",430,167.9,299.4728,34439.3683],["PSC Assy","2026-10-23",6,"C",417,56.99,101.6495,11689.6939],["PSC Winding","2026-10-23",6,"H",371,195.0867,299.0528,34391.0711],["PSC Assy","2026-10-23",7,"H",380,167.9,299.4728,34439.3683],["PSC Winding","2026-10-23",7,"E",657,195,298.9199,34375.793],["PSC Winding","2026-10-23",8,"C",790,202.5,310.4169,35697.9389],["PSC Assy","2026-10-23",9,"E",981,160.6,286.4522,32942.0045],["PSC Winding","2026-10-23",9,"C",1530,240,367.9015,42308.6683],["BLDC Winding","2026-10-24",1,"Chimney",992,29.6,null,null],["PSC Assy","2026-10-24",1,"C",2030,279,396.8182,45634.0909],["PSC Winding","2026-10-24",10,"C",1928,240,366.3718,42132.7619],["BLDC Winding","2026-10-24",2,"BLDC-ODU",962,29.6,null,null],["PSC Assy","2026-10-24",2,"E",825,176.7,251.3182,28901.5909],["PSC Winding","2026-10-24",2,"E",736,157.5,240.4315,27649.625],["BLDC Assy","2026-10-24",3,"BLDC",948,127.5,368,32384],["BLDC Winding","2026-10-24",3,"BLDC-IDU",905,26,null,null],["BLDC Winding","2026-10-24",3,"BLDC-ODU",93,4,null,null],["PSC Assy","2026-10-24",3,"E",30,4.25,6.0447,695.143],["PSC Assy","2026-10-24",3,"H",426,153.85,218.8189,25164.1752],["PSC Winding","2026-10-24",3,"H",815,265.86,405.8484,46672.567],["PSC Winding","2026-10-24",4,"H",466,123.5433,188.595,21688.4244],["PSC Assy","2026-10-24",5,"H",586,213.9,304.2273,34986.1364],["PSC Assy","2026-10-24",6,"C",1642,381.3,542.3182,62366.5909],["PSC Winding","2026-10-24",6,"H",574,246.9133,376.9254,43346.4195],["PSC Assy","2026-10-24",7,"E",98,40.25,57.2471,6583.4128],["PSC Assy","2026-10-24",7,"H",327,173.65,246.9802,28402.7236],["PSC Winding","2026-10-24",7,"E",583,195,297.6771,34232.869],["PSC Winding","2026-10-24",8,"C",922,180,274.7789,31599.5714],["PSC Assy","2026-10-24",9,"E",947,181.24,257.7754,29644.1672],["PSC Assy","2026-10-24",9,"H",105,32.66,46.4519,5341.9692],["PSC Winding","2026-10-24",9,"C",1620,240,366.3718,42132.7619],["BLDC Winding","2026-10-26",1,"Chimney",973,37,null,null],["PSC Assy","2026-10-26",1,"C",2792,394.01,542.1647,62348.9372],["PSC Assy","2026-10-26",10,"E",211,70.68,97.2569,11184.5458],["PSC Assy","2026-10-26",10,"H",201,109.82,151.1142,17378.1383],["PSC Winding","2026-10-26",10,"C",2441,304,474.2099,54534.1368],["BLDC Assy","2026-10-26",2,"BLDC",883,98.56,224.2057,19730.0973],["BLDC Winding","2026-10-26",2,"BLDC-ODU",60,2,null,null],["BLDC Winding","2026-10-26",2,"Chimney",862,27.6,null,null],["PSC Assy","2026-10-26",2,"E",950,180.5,248.3712,28562.6841],["PSC Winding","2026-10-26",2,"E",741,134.9229,210.4663,24203.6235],["BLDC Assy","2026-10-26",3,"BLDC",1130,97.5,221.7943,19517.9027],["BLDC Winding","2026-10-26",3,"BLDC-IDU",1000,29.6,null,null],["PSC Assy","2026-10-26",3,"H",275,161.5,222.2268,25556.0858],["PSC Winding","2026-10-26",3,"H",804,247,385.2955,44308.9861],["PSC Winding","2026-10-26",4,"H",396,90,140.3911,16144.9747],["PSC Assy","2026-10-26",5,"H",775,218.5,300.6598,34575.8808],["PSC Assy","2026-10-26",6,"C",2303,389.5,535.9588,61635.2657],["PSC Winding","2026-10-26",6,"H",669,247.1083,385.4645,44328.4199],["PSC Assy","2026-10-26",7,"E",78,32.66,44.9407,5168.1843],["PSC Assy","2026-10-26",7,"H",322,185.84,255.7191,29407.6965],["PSC Winding","2026-10-26",7,"E",401,195,304.1807,34980.7785],["PSC Winding","2026-10-26",8,"C",1045,180,280.7822,32289.9494],["PSC Assy","2026-10-26",9,"E",949,200.42,275.7814,31714.8651],["PSC Assy","2026-10-26",9,"H",31,8.58,11.8062,1357.7165],["PSC Winding","2026-10-26",9,"C",1695,239.8933,374.2098,43034.1311],["BLDC Winding","2026-10-27",1,"Chimney",1205,29.6,null,null],["PSC Assy","2026-10-27",1,"C",2664,389.5,526.0612,60497.0422],["PSC Assy","2026-10-27",10,"E",19,3.0083,4.0631,467.2536],["PSC Assy","2026-10-27",10,"H",330,177.46,239.6786,27563.0427],["PSC Winding","2026-10-27",10,"C",1756,240,369.0936,42445.7646],["BLDC Assy","2026-10-27",2,"BLDC",1060,96.2,208,18304],["BLDC Winding","2026-10-27",2,"Chimney",870,29.6,null,null],["PSC Assy","2026-10-27",2,"E",1025,180.31,243.5279,28005.7039],["PSC Winding","2026-10-27",2,"E",792,135,207.6152,23875.7426],["BLDC Assy","2026-10-27",3,"BLDC",806,96.2,208,18304],["BLDC Winding","2026-10-27",3,"BLDC-IDU",1090,29.6,null,null],["PSC Winding","2026-10-27",3,"H",887,256.5,394.4688,45363.9109],["PSC Winding","2026-10-27",4,"H",380,90.04,138.4716,15924.236],["PSC Assy","2026-10-27",5,"E",6,2.07,2.7958,321.5119],["PSC Assy","2026-10-27",5,"H",656,216.43,292.3118,33615.8533],["PSC Assy","2026-10-27",6,"C",1833,380,513.2305,59021.5046],["PSC Winding","2026-10-27",6,"H",515,195.1083,300.0552,34506.3433],["PSC Assy","2026-10-27",7,"E",185,70.9167,95.7805,11014.7589],["PSC Assy","2026-10-27",7,"H",349,147.5067,199.2235,22910.6984],["PSC Winding","2026-10-27",7,"E",551,195,299.8886,34487.1837],["PSC Assy","2026-10-27",8,"H",493,218.5831,295.2197,33950.2653],["PSC Winding","2026-10-27",8,"C",900,195,299.8886,34487.1837],["PSC Assy","2026-10-27",9,"E",922,218.5,295.1075,33937.3652],["PSC Winding","2026-10-27",9,"C",2046,304,467.5186,53764.6352],["BLDC Assy","2026-10-28",1,"BLDC",499,88.8,193.7632,17051.1579],["BLDC Winding","2026-10-28",1,"Chimney",1096,37,null,null],["PSC Assy","2026-10-28",1,"C",2372,389.5,506.3997,58235.9666],["PSC Assy","2026-10-28",10,"H",351,180.5,234.673,26987.3991],["PSC Winding","2026-10-28",10,"C",2610,304,508.579,58486.5905],["BLDC Assy","2026-10-28",2,"BLDC",100,4.8,10.4737,921.6842],["BLDC Winding","2026-10-28",2,"Chimney",1232,29.6,null,null],["PSC Assy","2026-10-28",2,"E",512,142.5,185.2682,21305.8414],["PSC Winding","2026-10-28",2,"E",739,157.535,263.5493,30308.1744],["BLDC Assy","2026-10-28",3,"BLDC",943,88.8,193.7632,17051.1579],["BLDC Winding","2026-10-28",3,"BLDC-IDU",1044,22.2,null,null],["PSC Winding","2026-10-28",3,"H",602,210,351.3211,40401.921],["PSC Winding","2026-10-28",4,"H",272,90.04,150.6331,17322.8046],["PSC Assy","2026-10-28",5,"E",1,0.46,0.5981,68.7768],["PSC Assy","2026-10-28",5,"H",800,218.04,283.4798,32600.1801],["PSC Assy","2026-10-28",6,"C",2307,380,494.0485,56815.5771],["PSC Winding","2026-10-28",6,"H",561,247.065,413.3292,47532.8601],["PSC Assy","2026-10-28",7,"H",536,218.73,284.3769,32703.3452],["PSC Winding","2026-10-28",7,"E",742,194.87,326.0092,37491.0588],["PSC Assy","2026-10-28",8,"H",501,218.5,284.0779,32668.9568],["PSC Assy","2026-10-28",9,"E",397,91.31,118.7147,13652.1851],["PSC Assy","2026-10-28",9,"H",247,127.19,165.3632,19016.7717],["PSC Winding","2026-10-28",9,"C",2292,304,508.579,58486.5905],["BLDC Winding","2026-10-29",1,"Chimney",1029,37,null,null],["PSC Assy","2026-10-29",1,"C",2489,389.5,523.4297,60194.4201],["PSC Winding","2026-10-29",10,"C",947,165.0733,297.8078,34247.8923],["BLDC Assy","2026-10-29",2,"BLDC",600,103.6,224,19712],["BLDC Winding","2026-10-29",2,"BLDC-ODU",18,0.44,null,null],["BLDC Winding","2026-10-29",2,"Chimney",1013,29.28,null,null],["PSC Assy","2026-10-29",2,"E",907,180.5,242.565,27894.9752],["PSC Winding","2026-10-29",2,"E",882,157.43,284.0185,32662.1241],["BLDC Assy","2026-10-29",3,"BLDC",1356,103.6,224,19712],["BLDC Winding","2026-10-29",3,"BLDC-IDU",1276,22.2,null,null],["PSC Winding","2026-10-29",3,"H",647,180.04,324.809,37353.0383],["PSC Assy","2026-10-29",5,"H",537,218.5,293.6313,33767.6015],["PSC Assy","2026-10-29",6,"C",2235,389.5,523.4297,60194.4201],["PSC Winding","2026-10-29",6,"H",469,195.1083,351.9937,40479.2771],["PSC Assy","2026-10-29",7,"H",529,218.5,293.6313,33767.6015],["PSC Winding","2026-10-29",7,"E",706,187.375,338.0421,38874.8364],["PSC Assy","2026-10-29",8,"H",389,157.5,211.6564,24340.4908],["PSC Assy","2026-10-29",9,"E",10,5.88,7.9018,908.7117],["PSC Assy","2026-10-29",9,"H",338,151.62,203.7546,23431.7791],["PSC Winding","2026-10-29",9,"C",1600,202.5,365.329,42012.8319],["BLDC Winding","2026-10-30",1,"Chimney",1244,37,null,null],["PSC Assy","2026-10-30",1,"C",2251,348.5,490.6941,56429.8249],["PSC Winding","2026-10-30",1,"E",381,96.6,165.3758,19018.2114],["PSC Assy","2026-10-30",10,"E",201,63,88.7051,10201.0874],["PSC Assy","2026-10-30",10,"H",139,94.5,133.0577,15301.6311],["PSC Winding","2026-10-30",10,"C",1280,240,410.8714,47250.2146],["BLDC Winding","2026-10-30",2,"Chimney",1275,29.6,null,null],["PSC Assy","2026-10-30",2,"E",847,142.5,200.6425,23073.8882],["PSC Winding","2026-10-30",2,"E",799,149.9333,256.6805,29518.259],["BLDC Assy","2026-10-30",3,"BLDC",1019,103.6,412,36256],["BLDC Winding","2026-10-30",3,"BLDC-IDU",1038,22.2,null,null],["PSC Winding","2026-10-30",3,"H",477,194.35,332.7203,38262.83],["PSC Assy","2026-10-30",5,"H",460,195.5,275.2674,31655.7554],["PSC Assy","2026-10-30",6,"C",2244,340,478.726,55053.4877],["PSC Winding","2026-10-30",6,"H",394,194.8917,333.6476,38369.4711],["PSC Assy","2026-10-30",7,"E",155,63.8889,89.9567,10345.0181],["PSC Assy","2026-10-30",7,"H",446,154.56,217.6232,25026.6678],["PSC Winding","2026-10-30",7,"E",631,195,333.833,38390.7993],["PSC Assy","2026-10-30",8,"H",366,196.5,276.6755,31817.6774],["PSC Assy","2026-10-30",9,"E",639,165.83,233.4916,26851.529],["PSC Assy","2026-10-30",9,"H",69,52.67,74.1603,8528.4329],["PSC Winding","2026-10-30",9,"C",1570,240,410.8714,47250.2146],["BLDC Winding","2026-10-31",1,"Chimney",1157,37,null,null],["PSC Assy","2026-10-31",1,"C",1910,307.5,449.4687,51688.9044],["PSC Winding","2026-10-31",1,"E",633,149.9333,261.3972,30060.6804],["PSC Assy","2026-10-31",10,"E",420,142.5,208.2904,23953.3947],["PSC Winding","2026-10-31",10,"C",1894,240.1422,418.6695,48146.9893],["BLDC Winding","2026-10-31",2,"Chimney",1198,29.6,null,null],["PSC Assy","2026-10-31",2,"E",974,180.405,263.6956,30324.9977],["PSC Winding","2026-10-31",2,"E",651,150.0333,261.5716,30080.7298],["BLDC Assy","2026-10-31",3,"BLDC",930,103.6,408,35904],["BLDC Winding","2026-10-31",3,"BLDC-IDU",1118,22.2,null,null],["PSC Winding","2026-10-31",3,"H",667,195.065,340.0808,39109.2927],["PSC Assy","2026-10-31",5,"H",429,172.5767,252.2531,29009.1019],["PSC Assy","2026-10-31",6,"C",1941,389.5,569.3271,65472.6123],["PSC Winding","2026-10-31",6,"H",526,194.9567,339.8919,39087.5726],["PSC Assy","2026-10-31",7,"H",425,157.395,230.0622,26457.1548],["PSC Winding","2026-10-31",7,"E",699,195,339.9675,39096.2606],["PSC Assy","2026-10-31",8,"E",392,99.3172,145.1707,16694.629],["PSC Assy","2026-10-31",8,"H",91,43.1089,63.0117,7246.3455],["PSC Assy","2026-10-31",9,"E",938,180,263.1036,30256.9197],["PSC Assy","2026-10-31",9,"H",27,10,14.6169,1680.94],["PSC Winding","2026-10-31",9,"C",1674,240,418.4215,48118.4746],["PSC Assy","2026-11-02",1,"C",1462,307.5,458.4,52715.9982],["PSC Winding","2026-11-02",1,"E",1009,199.5,315.7415,36310.2751],["PSC Assy","2026-11-02",10,"C",1723,387.983,578.3785,66513.5322],["PSC Winding","2026-11-02",10,"C",2042,303.9644,481.0737,55323.4717],["PSC Assy","2026-11-02",2,"E",900,180.576,269.1904,30956.8914],["PSC Winding","2026-11-02",2,"E",1062,180.5633,285.7711,32863.6807],["BLDC Winding","2026-11-02",2,"Chimney",1130,28,null,null],["PSC Winding","2026-11-02",3,"H",824,266.07,421.0995,48426.4406],["PSC Assy","2026-11-02",5,"E",95,38.64,57.6019,6624.2152],["PSC Assy","2026-11-02",5,"H",433,179.86,268.123,30834.1445],["PSC Winding","2026-11-02",6,"H",575,247.0217,390.9524,44959.5222],["PSC Assy","2026-11-02",7,"E",965,199.5,297.401,34201.111],["PSC Winding","2026-11-02",7,"E",852,246.9047,390.7672,44938.2274],["PSC Assy","2026-11-02",8,"H",361,172.569,257.2541,29584.2182],["PSC Assy","2026-11-02",9,"H",331,172.5,257.1512,29572.3893],["PSC Winding","2026-11-02",9,"C",2105,294.5,466.0946,53600.8823],["PSC Assy","2026-11-03",1,"C",1902,307.5,489.8719,56335.2729],["PSC Winding","2026-11-03",1,"E",1118,199.56,317.743,36540.4408],["BLDC Assy","2026-11-03",1,"IDU",530,74,185.8333,16353.3333],["BLDC Winding","2026-11-03",1,"Chimney",1127,37,null,null],["PSC Assy","2026-11-03",10,"C",1617,307.5,489.8719,56335.2729],["PSC Winding","2026-11-03",10,"C",2024,304.1067,484.204,55683.4619],["PSC Winding","2026-11-03",11,"E",450,150,238.8327,27465.7553],["PSC Assy","2026-11-03",2,"E",1033,180.5,287.5508,33068.3472],["PSC Winding","2026-11-03",2,"E",920,163.78,260.7734,29988.9427],["PSC Winding","2026-11-03",2,"H",106,16.7833,26.7227,3073.1128],["BLDC Winding","2026-11-03",2,"BLDC-IDU",1158,28,null,null],["BLDC Winding","2026-11-03",2,"Chimney",45,1.6,null,null],["PSC Winding","2026-11-03",3,"H",959,265.86,423.307,48680.3047],["BLDC Assy","2026-11-03",3,"IDU",635,103.6,260.1667,22894.6667],["BLDC Winding","2026-11-03",3,"BLDC-IDU",1204,22.2,null,null],["PSC Assy","2026-11-03",4,"E",338,142.5,227.0138,26106.5899],["PSC Assy","2026-11-03",5,"H",453,218.385,347.9047,40009.036],["PSC Assy","2026-11-03",6,"E",244,93.1,148.3157,17056.3054],["PSC Assy","2026-11-03",6,"H",240,87.4,139.2351,16012.0418],["PSC Winding","2026-11-03",6,"H",607,247.0217,393.3123,45230.911],["PSC Assy","2026-11-03",7,"E",145,37.62,59.9316,6892.1397],["PSC Assy","2026-11-03",7,"H",208,104.88,167.0822,19214.4502],["PSC Winding","2026-11-03",7,"E",748,242.97,386.8611,44489.0304],["PSC Winding","2026-11-03",7,"H",9,3.9,6.2096,714.1096],["PSC Assy","2026-11-03",9,"E",1450,228,363.2221,41770.5438],["PSC Winding","2026-11-03",9,"C",2035,304,484.0342,55663.9307],["PSC Assy","2026-11-04",1,"C",1730,307.5,486.0291,55893.3495],["PSC Winding","2026-11-04",1,"E",1096,199.5,299.4102,34432.1679],["BLDC Assy","2026-11-04",1,"IDU",1423,131.18,302.8348,26649.4645],["BLDC Winding","2026-11-04",1,"Chimney",1275,29.6,null,null],["PSC Assy","2026-11-04",10,"C",1636,307.5,486.0291,55893.3495],["PSC Winding","2026-11-04",10,"C",2300,304.1067,456.4041,52486.4752],["PSC Winding","2026-11-04",11,"E",827,199.5,299.4102,34432.1679],["PSC Assy","2026-11-04",2,"E",493,142.5,225.233,25901.7961],["PSC Winding","2026-11-04",2,"E",1137,190,285.1525,32792.5408],["BLDC Winding","2026-11-04",2,"BLDC-IDU",1600,38,null,null],["PSC Winding","2026-11-04",3,"H",838,247.065,370.7958,42641.5216],["BLDC Assy","2026-11-04",3,"IDU",1021,103.6,239.1652,21046.5355],["BLDC Winding","2026-11-04",3,"BLDC-IDU",1552,38,null,null],["PSC Assy","2026-11-04",4,"E",606,142.5,225.233,25901.7961],["PSC Winding","2026-11-04",4,"H",496,114,171.0915,19675.5245],["PSC Assy","2026-11-04",5,"H",459,172.5,272.6505,31354.8058],["PSC Assy","2026-11-04",6,"E",69,34.77,54.9569,6320.0383],["PSC Assy","2026-11-04",6,"H",105,107.73,170.2762,19581.7579],["PSC Winding","2026-11-04",6,"H",510,247,370.6983,42630.3031],["PSC Assy","2026-11-04",7,"H",364,142.5,225.233,25901.7961],["PSC Winding","2026-11-04",7,"E",989,246.9567,370.6333,42622.8241],["PSC Assy","2026-11-04",9,"E",1227,187.5,296.3592,34081.3107],["PSC Winding","2026-11-04",9,"C",2045,304.1067,456.4041,52486.4752],["PSC Assy","2026-11-05",1,"C",2560,389.5,591.9257,68071.4581],["PSC Winding","2026-11-05",1,"E",1044,199.543,297.1508,34172.3386],["BLDC Assy","2026-11-05",1,"IDU",481,70,160.1351,14091.8919],["BLDC Assy","2026-11-05",1,"ODU",452,33.6,76.8649,6764.1081],["BLDC Winding","2026-11-05",1,"Chimney",1214,29.6,null,null],["PSC Assy","2026-11-05",10,"C",2320,389.5,591.9257,68071.4581],["PSC Winding","2026-11-05",10,"C",2083,304,452.7036,52060.9139],["PSC Winding","2026-11-05",11,"E",592,228.04,339.5873,39052.5355],["PSC Assy","2026-11-05",2,"E",1000,180.5,274.307,31545.3098],["PSC Winding","2026-11-05",2,"E",1265,190.06,283.0291,32548.3464],["BLDC Assy","2026-11-05",2,"IDU",711,70,160.1351,14091.8919],["BLDC Winding","2026-11-05",2,"BLDC-IDU",3007,75.2,null,null],["PSC Assy","2026-11-05",3,"E",14,3.06,4.6503,534.7848],["PSC Assy","2026-11-05",3,"H",403,124.44,189.1123,21747.9133],["PSC Winding","2026-11-05",3,"H",668,247.065,367.9185,42310.624],["BLDC Assy","2026-11-05",3,"IDU",477,33.6,76.8649,6764.1081],["PSC Assy","2026-11-05",4,"E",757,172.96,262.8485,30227.5722],["PSC Winding","2026-11-05",4,"H",292,114,169.7638,19522.8427],["PSC Assy","2026-11-05",5,"H",570,218.5,332.0559,38186.4277],["PSC Winding","2026-11-05",6,"H",566,247,367.8217,42299.4925],["PSC Assy","2026-11-05",7,"E",365,113.2,172.0308,19783.5406],["PSC Assy","2026-11-05",7,"H",181,76.8,116.7135,13422.0487],["PSC Winding","2026-11-05",7,"E",985,247,367.8217,42299.4925],["PSC Assy","2026-11-05",9,"E",1550,237.5,360.9303,41506.9866],["PSC Winding","2026-11-05",9,"C",1950,304,452.7036,52060.9139],["PSC Assy","2026-11-06",1,"C",1608,307.5,486.0265,55893.0464],["PSC Winding","2026-11-06",1,"E",951,199.5,313.6548,36070.2994],["BLDC Assy","2026-11-06",1,"IDU",779,98,240.2703,21143.7838],["BLDC Assy","2026-11-06",1,"ODU",49,5.6,13.7297,1208.2162],["BLDC Winding","2026-11-06",1,"Chimney",1042,29.6,null,null],["PSC Assy","2026-11-06",10,"C",1930,307.5,486.0265,55893.0464],["PSC Winding","2026-11-06",10,"C",2096,303.9893,477.9334,54962.3372],["PSC Winding","2026-11-06",11,"E",697,228,358.4626,41223.1993],["PSC Assy","2026-11-06",2,"E",1041,180.5,285.2936,32808.7638],["PSC Winding","2026-11-06",2,"E",1204,190,298.7188,34352.6661],["BLDC Winding","2026-11-06",2,"BLDC-IDU",1489,37.6,null,null],["PSC Assy","2026-11-06",3,"H",432,161.5,255.2627,29355.2097],["PSC Winding","2026-11-06",3,"H",798,247,388.3345,44658.4659],["BLDC Assy","2026-11-06",3,"IDU",880,103.6,254,22352],["BLDC Winding","2026-11-06",3,"BLDC-IDU",60,1.6,null,null],["BLDC Winding","2026-11-06",3,"BLDC-ODU",1054,36,null,null],["PSC Assy","2026-11-06",4,"E",852,180.5,285.2936,32808.7638],["PSC Winding","2026-11-06",4,"H",232,90,141.4984,16272.3155],["PSC Assy","2026-11-06",5,"E",80,38.41,60.7098,6981.6322],["PSC Assy","2026-11-06",5,"H",339,180.09,284.6456,32734.2397],["PSC Winding","2026-11-06",6,"H",639,246.8917,388.1642,44638.8789],["PSC Assy","2026-11-06",7,"E",207,77.28,122.1468,14046.8768],["PSC Assy","2026-11-06",7,"H",353,141.22,223.2087,25668.9951],["PSC Winding","2026-11-06",7,"E",929,247.0858,388.4694,44673.9789],["PSC Assy","2026-11-06",9,"E",1541,237.5,375.3863,43169.426],["PSC Winding","2026-11-06",9,"C",2213,303.8816,477.764,54942.8586],["PSC Assy","2026-11-07",1,"C",1131,225.5,522.8746,60130.5756],["PSC Winding","2026-11-07",1,"E",477,105,274.121,31523.9152],["BLDC Assy","2026-11-07",1,"IDU",834,77,472,41536],["BLDC Winding","2026-11-07",1,"Chimney",767,22,null,null],["PSC Assy","2026-11-07",10,"C",927,156,361.7225,41598.0922],["PSC Winding","2026-11-07",10,"C",1023,160,417.7082,48036.4423],["PSC Winding","2026-11-07",11,"E",272,119.94,313.1245,36009.318],["PSC Assy","2026-11-07",2,"E",591,100.7,233.4965,26852.1018],["PSC Winding","2026-11-07",2,"E",612,100,261.0676,30022.7764],["BLDC Winding","2026-11-07",2,"BLDC-IDU",710,21.6,null,null],["PSC Assy","2026-11-07",3,"H",188,87.21,202.2168,23254.9335],["PSC Winding","2026-11-07",3,"H",274,105,274.121,31523.9152],["BLDC Winding","2026-11-07",3,"BLDC-ODU",718,21.6,null,null],["PSC Assy","2026-11-07",4,"E",511,87.4,202.6574,23305.5978],["PSC Winding","2026-11-07",4,"H",165,60,156.6406,18013.6659],["PSC Assy","2026-11-07",5,"H",440,153.18,355.1837,40846.1267],["PSC Winding","2026-11-07",6,"H",244,105,274.121,31523.9152],["PSC Assy","2026-11-07",7,"E",191,36.57,84.7961,9751.5528],["PSC Assy","2026-11-07",7,"H",184,81.19,188.258,21649.6737],["PSC Winding","2026-11-07",7,"E",560,130,339.3879,39029.6094],["PSC Assy","2026-11-07",9,"E",909,162.5,376.7943,43331.346],["PSC Winding","2026-11-07",9,"C",950,158.72,414.3665,47652.1507],["PSC Winding","2026-11-07",9,"H",11,1.28,3.3417,384.2915]]};
+const FR = [{k:'C',name:'Frame C',tok:'--s1'},{k:'E',name:'Frame E',tok:'--s2'},{k:'H',name:'Frame H',tok:'--s3'},{k:'B',name:'BLDC',tok:'--s4'},{k:'CF',name:'Chimney',tok:'--s7'}];
+const DEF = {view:'d',from:'2026-11-01',to:'2026-11-17',frames:[1,1,1,1,1],metric:'total',labels:'smart',prodOnly:true,stage:'asy',lineDept:'PSC Winding',lineMetric:'cost',dept:'all'};
+const S = JSON.parse(JSON.stringify(DEF));
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const n0 = x => x==null?'–':Math.round(x).toLocaleString('en-IN');
+const n1 = x => x==null?'–':x.toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
+const rs = x => x==null?'–':'₹'+n0(x);
+const BL={},BK={},BD={};
+const dl = iso => BL[iso]||new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+const dow = iso => BD[iso]||new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short'});
+const sum = a => a.reduce((s,x)=>s+(x||0),0);
+const charts = {};
+const glow={id:'glow',defaults:{on:false},
+  beforeDatasetDraw(c,a,o){ if(!o||!o.on) return; const px=+css('--glowpx')||0; if(!px) return; const ds=c.data.datasets[a.index]; let col=ds.borderColor; if(typeof col!=='string') col=Array.isArray(ds.backgroundColor)?ds.backgroundColor[0]:ds.backgroundColor; if(typeof col!=='string') col='#3ee6ff'; c.ctx.save(); c.ctx.shadowColor=col; c.ctx.shadowBlur=px; },
+  afterDatasetDraw(c,a,o){ if(!o||!o.on) return; if(!(+css('--glowpx')||0)) return; c.ctx.restore(); }};
+Chart.register(ChartDataLabels,glow);
+const darkOn=()=>css('--onseg')!=='#ffffff';
+const prevNum={};
+function animateNums(){
+  document.querySelectorAll('[data-count]').forEach(el=>{
+    const to=+el.dataset.count, key=el.dataset.key||el.id, from=prevNum[key]==null?0:prevNum[key]; prevNum[key]=to;
+    el.textContent=n0(to);
+    if(typeof requestAnimationFrame==='undefined'||matchMedia('(prefers-reduced-motion: reduce)').matches||from===to) return;
+    const t0=performance.now(), dur=750;
+    (function step(t){ const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3); el.textContent=n0(from+(to-from)*e); if(k<1) requestAnimationFrame(step); })(t0);
+  });
+}
+Chart.defaults.set('plugins.datalabels',{display:false});
+
+const UN={d:['day','Day','Daily'],w:['week','Week','Weekly'],m:['month','Month','Monthly']};
+function bucketize(days){
+  if(S.view==='d') return days;
+  const g=new Map();
+  days.forEach(d=>{ const i=S.view==='w'?isoWeek(d.date):0;
+    const key=S.view==='w'?'w:'+i:'m:'+d.date.slice(0,7);
+    if(!g.has(key)) g.set(key,{key,i,days:[]}); g.get(key).days.push(d); });
+  return [...g.values()].map(({key,i,days:a})=>{
+    const o={date:key,nd:a.length,hb:S.view==='w'?'W'+i.slice(-2):new Date(a[0].date+'T00:00:00').toLocaleDateString('en-GB',{month:'short'}),hs:''};
+    BL[key]=S.view==='w'?i:new Date(a[0].date+'T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+    BD[key]=a.length+(a.length===1?' day':' days'); BK[key]=[a[0].date,a[a.length-1].date];
+    const A=(f,n)=>Array.from({length:n},(_,j)=>sum(a.map(d=>f(d)[j])));
+    o.wp=A(d=>d.wp,3);o.ap=A(d=>d.ap,3);o.ww=A(d=>d.ww,3);o.aw=A(d=>d.aw,3);
+    ['bp','bwp','chp','bww'].forEach(k=>o[k]=sum(a.map(d=>d[k])));
+    o.att={}; Object.keys(a[0].att).forEach(k=>o.att[k]=sum(a.map(d=>d.att[k])));
+    const wa=(k,f)=>{let s=0,p=0; a.forEach(d=>{const v=f(d),q=prodOf(d,k); if(v!=null&&q){s+=v*q;p+=q;}}); return p?s/p:null;};
+    o.wc=[0,1,2].map(k=>wa(k,d=>d.wc[k])); o.ac=[0,1,2].map(k=>wa(k,d=>d.ac[k])); o.sc=[0,1,2].map(k=>wa(k,d=>d.sc[k]));
+    o.su=[0,1,2,3,4].map(k=>wa(k,d=>d.su[k])); o.bc=wa(3,d=>d.bc);
+    o.tot=[0,1,2,3,4].map(k=>[0,1,2,3,4].map(j=>wa(k,d=>d.tot[k][j])));
+    return o; });
+}
+function updateTitles(){ const u=UN[S.view];
+  $('prodTitle').textContent=u[2]+' production'; $('prodSub').textContent='Motors per '+u[0]+', stacked by frame';
+  $('scSub').textContent='Each dot is one '+u[0]; $('lbTitle').textContent='Highest & lowest '+u[0]; $('tblTitle').textContent=u[2]+' detail'; }
+function focusKey(k){ const b=BK[k]; if(b){ S.view='d'; $('viewBy').value='d'; setRange(b[0],b[1]); } else setRange(k,k); }
+function rangeDays(){ return DATA.days.filter(d=>d.date>=S.from && d.date<=S.to); }
+function selK(max){ return [0,1,2,3,4].filter(k=>S.frames[k] && k<=max); }
+function val(d,k,m){
+  if(m==='total') return d.tot[k][4];
+  if(m==='labour') return d.tot[k][2];
+  if(m==='prod') return d.tot[k][0];
+  if(m==='sup') return d.tot[k][1];
+  if(m==='wdg') return k<3?d.wc[k]:null;
+  if(m==='asy') return k<3?d.ac[k]:null;
+  if(m==='shl') return (k===1||k===2)?d.sc[k]:null;
+  return null;
+}
+function prodOf(d,k){ return k<3?d.ap[k]:(k===3?d.bp:(k===4?d.chp:null)); }
+const metricName = {total:'Total manufacturing cost',labour:'Total labour cost',prod:'Production cost',sup:'Support cost',wdg:'Winding cost',asy:'Assembly cost',shl:'Shell cost'};
+
+function mk(id,cfg){ if(charts[id]) charts[id].destroy(); charts[id]=new Chart($(id),cfg); }
+function base(){
+  const ink=css('--ink'), ink2=css('--ink2'), grid=css('--grid'), surf=css('--solid');
+  Chart.defaults.font.family=css('--font'); Chart.defaults.font.size=11.5; Chart.defaults.color=ink2;
+  return {ink,ink2,grid,surf,
+    tip:{backgroundColor:'#0a1428',titleColor:'#f2f5fa',bodyColor:'#f2f5fa',padding:10,cornerRadius:6,boxPadding:4},
+    legend:{position:'bottom',labels:{usePointStyle:true,pointStyle:'rectRounded',boxWidth:9,boxHeight:9,color:ink2,padding:14}}};
+}
+function lab(b,over){ return Object.assign({display:true,color:b.ink,backgroundColor:b.surf,borderRadius:3,padding:{top:1,bottom:1,left:3,right:3},font:{size:10.5,weight:'600'},clamp:true},over||{}); }
+function showEmpty(id,on){ $(id).hidden=!on; }
+function spark(id,labels,data,color,fill){
+  mk(id,{type:'line',data:{labels,datasets:[{data,borderColor:color,backgroundColor:fill,fill:true,borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:.3,spanGaps:true}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:4,bottom:2}},plugins:{glow:{on:true},legend:{display:false},tooltip:{enabled:true,backgroundColor:'#0a1428',titleColor:'#f2f5fa',bodyColor:'#f2f5fa',displayColors:false,callbacks:{label:c=>' '+n0(c.parsed.y)}}},
+      scales:{x:{display:false},y:{display:false,beginAtZero:false}},interaction:{mode:'index',intersect:false}}});
+}
+
+/* ---------- Hero, mini KPIs, tiles, active filters ---------- */
+function renderHeadline(days){
+  const ks=selK(4);
+  let ws=0,wp=0, lo=null, hi=null;
+  ks.forEach(k=>days.forEach(d=>{
+    const t=d.tot[k][4], p=prodOf(d,k);
+    if(t!=null&&p){ws+=t*p;wp+=p;}
+    if(t!=null){
+      if(!lo||t<lo.v) lo={v:t,d:d.date,f:FR[k].name};
+      if(!hi||t>hi.v) hi={v:t,d:d.date,f:FR[k].name};
+    }
+  }));
+  const cd=days.filter(d=>ks.some(k=>d.tot[k][4]!=null)).length;
+  const avg=wp?ws/wp:0, peak=hi?hi.v:1;
+  $('heroNum').dataset.count=Math.round(avg); $('gcap').textContent=hi?'peak day ₹'+n0(hi.v):'';
+  const gb=base();
+  mk('cGauge',{type:'doughnut',data:{datasets:[{data:[avg,Math.max(peak-avg,0.0001)],borderWidth:0,borderRadius:10,
+      backgroundColor:c=>{ if(c.dataIndex!==0) return 'rgba(255,255,255,0.14)'; const a=c.chart.chartArea; if(!a) return '#3ee6ff'; const g=c.chart.ctx.createLinearGradient(a.left,a.bottom,a.right,a.top); g.addColorStop(0,'#3ee6ff'); g.addColorStop(1,'#7aa8ff'); return g; }}]},
+    options:{responsive:true,maintainAspectRatio:false,rotation:-135,circumference:270,cutout:'80%',layout:{padding:6},plugins:{legend:{display:false},tooltip:{enabled:false},datalabels:{display:false},glow:{on:true}},animation:{duration:700}}});
+  $('heroSub').textContent=wp?`Weighted by motors · ${cd} cost days`:'No cost days for this selection';
+  const fh=ks.map(k=>{let a=null,z=null; days.forEach(d=>{const t=d.tot[k][4]; if(t==null) return; if(!a||t<a.t) a={t,d:d.date}; if(!z||t>z.t) z={t,d:d.date};}); return a?{k,lo:a,hi:z}:null;}).filter(Boolean);
+  $('heroFH').innerHTML=fh.length?`<div class="fhr fhh"><span>Frame</span><span>Lowest day</span><span>Highest day</span></div>`+fh.map(r=>`<div class="fhr"><span class="fn"><i class="dot" style="background:var(${FR[r.k].tok})"></i>${FR[r.k].name}</span><span class="lo"><b>${rs(r.lo.t)}</b><em>${dl(r.lo.d)}</em></span><span class="hi"><b>${rs(r.hi.t)}</b><em>${dl(r.hi.d)}</em></span></div>`).join(''):'';
+  const lbl=days.map(d=>dl(d.date));
+    // mini KPIs
+  const motors=sum(ks.map(k=>sum(days.map(d=>prodOf(d,k)))));
+  const att=sum(days.map(d=>sum(Object.values(d.att))));
+  let best=null; ks.forEach(k=>{let s=0,p=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}}); if(p&&(!best||s/p<best.v)) best={v:s/p,f:FR[k].name};});
+  $('kstack').innerHTML=`
+    <div class="card mini"><div><div class="k">Motors produced</div><div class="v">${motors?`<span data-key="mot" data-count="${motors}">${n0(motors)}</span>`:'–'}</div><div class="s">Assembly output</div></div><div class="spark"><canvas id="sMot"></canvas></div></div>
+    <div class="card mini"><div><div class="k">Attendance man-hours</div><div class="v">${att?`<span data-key="att" data-count="${Math.round(att)}">${n0(att)}</span>`:'–'}</div><div class="s">All departments</div></div><div class="spark"><canvas id="sAtt"></canvas></div></div>
+    <div class="card mini"><div><div class="k">Lowest cost frame</div><div class="v">${best?`<small>₹</small><span data-key="best" data-count="${Math.round(best.v)}">${n0(best.v)}</span>`:'–'}</div><div class="s">${best?best.f+' · per motor':'No cost days'}</div></div></div>`;
+  spark('sMot',lbl,days.map(d=>sum(ks.map(k=>prodOf(d,k)))||null),css('--s1'),css('--s1')+'33');
+  spark('sAtt',lbl,days.map(d=>sum(Object.values(d.att))||null),css('--s2'),css('--s2')+'33');
+  // frame tiles
+  const rows=[0,1,2,3,4].filter(k=>S.frames[k]).map(k=>{let s=0,p=0,c=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;c++;}}); let sp=0,ss=0,sf=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){sp+=d.tot[k][0]*q;ss+=d.tot[k][1]*q;sf+=d.tot[k][3]*q;}}); return {k,avg:p?s/p:null,p,c,m:sum(days.map(d=>prodOf(d,k))),pr:p?sp/p:null,su:p?ss/p:null,pf:p?sf/p:null};});
+  const totM=sum(rows.map(r=>r.m))||1;
+  const solo=S.frames.filter(Boolean).length===1;
+  $('tiles').innerHTML=rows.map(r=>{const sh=Math.round(r.m/totM*100); return `<button type="button" class="tile" data-i="${r.k}" aria-pressed="${solo&&!!S.frames[r.k]}" title="Click to focus on ${FR[r.k].name}">
+    <div class="n"><span class="dot" style="background:var(${FR[r.k].tok})"></span>${FR[r.k].name}<span class="cap">Avg cost per motor</span></div>
+    <div class="a">${r.avg!=null?rs(r.avg):'–'}</div>
+    <div class="m">${r.p?r.c+' cost days · '+n0(r.m)+' motors made':'no cost days'}</div>
+    ${r.p?`<div class="split"><span><i>Production</i><b>${rs(r.pr)}</b></span><span><i>Support</i><b>${rs(r.su)}</b></span><span><i>P&amp;F</i><b>${rs(r.pf)}</b></span></div>`:''}
+    <div class="sharel"><span>Share of motors</span><b>${sh}%</b></div>
+    <div class="share" title="Share of selected motors"><i style="width:${sh}%;background:var(${FR[r.k].tok})"></i></div></button>`;}).join('');
+  const items=rows.map(r=>`<span class="ti"><i class="dot" style="background:var(${FR[r.k].tok})"></i>${FR[r.k].name}<b>${r.avg!=null?rs(r.avg):'–'}</b><em>${n0(r.m)} motors</em></span>`);
+  items.push(`<span class="ti">Motors<b>${n0(motors)}</b></span>`,`<span class="ti">Man-hours<b>${n0(att)}</b></span>`);
+  if(lo&&hi) items.push(`<span class="ti">Lowest<b>${rs(lo.v)}</b><em>${lo.f} · ${dl(lo.d)}</em></span>`,`<span class="ti">Highest<b>${rs(hi.v)}</b><em>${hi.f} · ${dl(hi.d)}</em></span>`);
+  const tk=items.join('<span class="sep">◆</span>')+'<span class="sep">◆</span>'; $('ticker').innerHTML=tk+tk;
+  animateNums();
+  $('cfNote').innerHTML=(S.frames[4]&&!sum(days.map(d=>d.chp)))?`<div class="note"><strong>Chimney:</strong> man-hours are in the workbook (${n0(sum(days.map(d=>d.att.cf)))} hrs in this range) but no Chimney production was found for it, so cost per fan is not calculated. Add the C/F rows in the CF &amp; CM MTR Production file.</div>`:'';
+  // active filter pills
+  const on=[0,1,2,3,4].filter(i=>S.frames[i]);
+  $('active').innerHTML=`<span class="pill"><b>${dl(S.from)} – ${dl(S.to)}</b></span><span class="pill">${UN[S.view][2]} view</span><span class="pill"><b>${on.length===5?'All frames':on.map(i=>FR[i].name).join(', ')||'No frame'}</b></span><span class="pill">${metricName[S.metric]}</span>`;
+}
+
+/* ---------- Cost parts (shared by donut, build-up, insights) ---------- */
+function costParts(days){
+  const ks=selK(4), acc={wdg:0,asy:0,shl:0,bld:0,cfp:0,sup:0,pf:0}; let P=0;
+  ks.forEach(k=>days.forEach(d=>{ const t=d.tot[k][4], p=prodOf(d,k); if(t==null||!p) return; P+=p;
+    if(k<3){acc.wdg+=d.wc[k]*p; acc.asy+=d.ac[k]*p;} if(k===1||k===2) acc.shl+=d.sc[k]*p; if(k===3) acc.bld+=d.bc*p; if(k===4) acc.cfp+=d.tot[4][0]*p;
+    acc.sup+=d.tot[k][1]*p; acc.pf+=d.tot[k][3]*p; }));
+  const parts=[['Winding','wdg','--s1','#ffffff'],['Assembly','asy','--s2','#ffffff'],['Shell','shl','--s3','#04241a'],['BLDC production','bld','--s6','#ffffff'],['Chimney production','cfp','--s7','#ffffff'],['Support','sup','--s4','#2a1d00'],['P&F','pf','--s5','#3a0f22']].filter(p=>P&&acc[p[1]]/P>0.005);
+  const vals=parts.map(p=>acc[p[1]]/P);
+  return {parts,vals,tot:sum(vals),P};
+}
+function renderDonut(days){
+  const b=base(), {parts,vals,tot,P}=costParts(days);
+  showEmpty('eDonut',!P);
+  const center={id:'center',afterDraw(c){const {ctx,chartArea:a}=c; if(!P) return; const x=(a.left+a.right)/2,y=(a.top+a.bottom)/2; ctx.save(); ctx.textAlign='center'; ctx.fillStyle=b.ink; ctx.font='700 34px '+css('--font-d'); ctx.fillText('₹'+n0(tot),x,y+6); ctx.font='500 11px '+css('--font'); ctx.fillStyle=b.ink2; ctx.fillText('per motor',x,y+24); ctx.restore();}};
+  mk('cDonut',{type:'doughnut',data:{labels:parts.map(p=>p[0]),datasets:[{data:vals,backgroundColor:parts.map(p=>css(p[2])),borderColor:b.surf,borderWidth:3,hoverOffset:6,
+      datalabels:{display:ctx=>S.labels!=='off'&&vals[ctx.dataIndex]/tot>=(S.labels==='all'?0.01:0.06),color:ctx=>darkOn()?'#05101f':parts[ctx.dataIndex][3],font:{size:11,weight:'700'},formatter:v=>'₹'+n0(v)}}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',layout:{padding:4},plugins:{legend:Object.assign({},b.legend,{labels:Object.assign({},b.legend.labels,{pointStyle:'circle'})}),tooltip:Object.assign({},b.tip,{callbacks:{label:c=>` ${c.label}: ₹${n1(c.parsed)} (${n0(c.parsed/tot*100)}%)`}})}},plugins:[center]});
+}
+
+/* ---------- Cost build-up (waterfall) ---------- */
+function renderWater(days){
+  const b=base(), {parts,vals,tot,P}=costParts(days);
+  showEmpty('eWater',!P);
+  const short={'BLDC production':'BLDC prod.'};
+  let c=0; const bars=vals.map(v=>{const r=[c,c+v]; c+=v; return r;}); bars.push([0,tot]);
+  mk('cWater',{type:'bar',data:{labels:parts.map(p=>short[p[0]]||p[0]).concat(['Total']),datasets:[{data:bars,backgroundColor:parts.map(p=>css(p[2])).concat([css('--ink')]),borderRadius:3,borderSkipped:false,maxBarThickness:46,
+      datalabels:{display:()=>S.labels!=='off',anchor:'end',align:'end',color:b.ink,font:{size:11,weight:'700'},formatter:v=>'₹'+n0(v[1]-v[0])}}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},plugins:{legend:{display:false},tooltip:Object.assign({},b.tip,{callbacks:{label:c=>' ₹'+n1(c.raw[1]-c.raw[0])+' per motor'}})},
+      scales:{x:{grid:{display:false},ticks:{color:b.ink2,autoSkip:false,maxRotation:45,minRotation:0}},y:{beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>'₹'+v}}}}});
+}
+
+/* ---------- Volume vs cost (scatter) ---------- */
+function renderScatter(days){
+  const b=base(), ks=selK(4);
+  const sets=ks.map(k=>({k,pts:days.map(d=>{const t=d.tot[k][4],p=prodOf(d,k); return (t!=null&&p)?{x:p,y:t,d:d.date}:null;}).filter(Boolean)})).filter(s=>s.pts.length);
+  showEmpty('eScat',!sets.length);
+  mk('cScat',{type:'scatter',data:{datasets:sets.map(s=>({label:FR[s.k].name,data:s.pts,backgroundColor:css(FR[s.k].tok),borderColor:b.surf,borderWidth:1.5,pointRadius:5.5,pointHoverRadius:8,
+      datalabels:{display:ctx=>{ if(S.labels==='off') return false; if(S.labels==='all') return true; const arr=ctx.dataset.data; return arr[ctx.dataIndex].y===Math.max(...arr.map(a=>a.y)); },align:'top',offset:4,color:b.ink,font:{size:10,weight:'600'},formatter:v=>dl(v.d)}}))},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:14,right:10}},plugins:{glow:{on:true},legend:b.legend,tooltip:Object.assign({},b.tip,{callbacks:{label:c=>` ${c.dataset.label} · ${dl(c.raw.d)}: ${n0(c.raw.x)} motors, ₹${n1(c.raw.y)}`}})},
+      scales:{x:{beginAtZero:true,title:{display:true,text:'Motors in the day',color:b.ink2},grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>n0(v)}},y:{beginAtZero:true,title:{display:true,text:'₹ per motor',color:b.ink2},grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>'₹'+v}}}}});
+}
+
+/* ---------- Day-by-day heat map ---------- */
+function renderHeat(days){
+  const ks=selK(4); let ds=days; if(S.prodOnly) ds=days.filter(d=>ks.some(k=>val(d,k,S.metric)!=null));
+  $('heatTitle').textContent=metricName[S.metric]+' per motor, '+{d:'day by day',w:'week by week',m:'month by month'}[S.view];
+  if(!ks.length||!ds.length){ $('heat').innerHTML='<div style="color:var(--muted);padding:18px 4px">No cost days for this selection.</div>'; return; }
+  const defs=ks.map(k=>({name:FR[k].name,tok:FR[k].tok,k,txt:(k===2||k===3)?'#101828':css('--onseg')}));
+  const rv=(d,df)=>{ if(!df.all) return val(d,df.k,S.metric); let s=0,p=0; ks.forEach(k=>{const v=val(d,k,S.metric),q=prodOf(d,k); if(v!=null&&q){s+=v*q;p+=q;}}); return p?s/p:null; };
+  const N=ds.length;
+  let h=`<div class="hm" style="grid-template-columns:104px repeat(${N},minmax(34px,1fr));min-width:${104+N*37}px"><div class="hl"></div>`+ds.map(d=>`<div class="hd"><b>${d.hb||+d.date.slice(8)}</b><span>${d.hb?'':dow(d.date).slice(0,2)}</span></div>`).join('');
+  defs.forEach(df=>{
+    const vs=ds.map(d=>rv(d,df)), real=vs.filter(x=>x!=null), lo=Math.min(...real), hi=Math.max(...real);
+    h+=`<div class="hl"><span class="dot" style="background:var(${df.tok})"></span>${df.name}</div>`;
+    ds.forEach((d,i)=>{ const v=vs[i];
+      if(v==null){ h+='<div class="hc none"></div>'; return; }
+      const pct=Math.round(14+76*((v-lo)/((hi-lo)||1))), dark=pct>52;
+      h+=`<button type="button" class="hc" data-d="${d.date}" title="${df.name} · ${dl(d.date)}: ₹${n1(v)}" style="background:color-mix(in srgb,var(${df.tok}) ${pct}%,var(--tile));color:${dark?df.txt:'var(--ink)'}">${S.labels==='off'?'':n0(v)}</button>`; });
+  });
+  $('heat').innerHTML=h+'</div>';
+}
+
+/* ---------- Insights ---------- */
+function renderInsights(days){
+  const ks=selK(4), out=[];
+  const fa=ks.map(k=>{let s=0,p=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}}); return p?{k,v:s/p}:null;}).filter(Boolean).sort((a,b)=>b.v-a.v);
+  if(fa.length>=2){ const a=fa[0], z=fa[fa.length-1]; out.push([FR[a.k].tok,`<b>${FR[a.k].name}</b> is the costliest at <b>${rs(a.v)}</b> per motor, ${n1(a.v/z.v)}× ${FR[z.k].name} (${rs(z.v)}).`]); }
+  const cp=costParts(days);
+  if(cp.P){ const i=cp.vals.indexOf(Math.max(...cp.vals)); out.push([cp.parts[i][2],`<b>${cp.parts[i][0]}</b> is the biggest cost block: ${rs(cp.vals[i])} of ${rs(cp.tot)} (${n0(cp.vals[i]/cp.tot*100)}%).`]); }
+  let pk=null; ks.forEach(k=>days.forEach(d=>{const t=d.tot[k][4]; if(t!=null&&(!pk||t>pk.t)) pk={k,t,d:d.date};}));
+  if(pk){ const av=fa.find(x=>x.k===pk.k); if(av&&av.v>0) out.push([FR[pk.k].tok,`<b>${FR[pk.k].name}</b> peaked on <b>${dl(pk.d)}</b> at ${rs(pk.t)}, ${n0((pk.t/av.v-1)*100)}% above its own average.`]); }
+  const pts=days.map(d=>{let s=0,p=0,m=0; ks.forEach(k=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;m+=q;}}); return p?{m,c:s/p}:null;}).filter(Boolean);
+  if(pts.length>=6){ const sm=pts.map(x=>x.m).sort((a,b)=>a-b), med=sm[Math.floor(sm.length/2)];
+    const hi=pts.filter(x=>x.m>med), lo=pts.filter(x=>x.m<=med);
+    if(hi.length&&lo.length){ const ha=sum(hi.map(x=>x.c))/hi.length, la=sum(lo.map(x=>x.c))/lo.length, df=(la-ha)/la*100;
+      out.push(['--s3',`On heavier days (above ${n0(med)} motors) cost averaged <b>${rs(ha)}</b> against <b>${rs(la)}</b> on lighter days, ${n0(Math.abs(df))}% ${df>=0?'lower':'higher'}.`]); } }
+  const motors=sum(ks.map(k=>sum(days.map(d=>prodOf(d,k))))), att=sum(days.map(d=>sum(Object.values(d.att))));
+  if(motors&&att) out.push(['--neu',`Attendance works out to <b>${n1(att/motors)} man-hours per motor</b> across all departments.`]);
+  $('ins').innerHTML=out.length?out.map(o=>`<div class="ins"><span class="dot" style="background:var(${o[0]})"></span><div>${o[1]}</div></div>`).join(''):'<div style="color:var(--muted)">No cost days for this selection.</div>';
+}
+
+/* ---------- Trend ---------- */
+function renderTrend(days){
+  const b=base(), ks=selK(4);
+  let ds=days; if(S.prodOnly) ds=days.filter(d=>ks.some(k=>val(d,k,S.metric)!=null));
+  const labels=ds.map(d=>dl(d.date));
+  const sets=ks.map(k=>({k,data:ds.map(d=>val(d,k,S.metric))})).filter(s=>s.data.some(v=>v!=null));
+  $('trendTitle').textContent=metricName[S.metric]+' per motor';
+  $('trendSub').textContent='₹ per motor, by '+UN[S.view][0]+(S.prodOnly?' (days with production)':'');
+  showEmpty('eTrend',!sets.length);
+  mk('cTrend',{type:'line',data:{labels,datasets:sets.map(s=>({label:FR[s.k].name,data:s.data,borderColor:css(FR[s.k].tok),backgroundColor:css(FR[s.k].tok),borderWidth:2.4,pointRadius:3.4,pointHoverRadius:6,pointBorderColor:b.surf,pointBorderWidth:1.5,tension:.2,spanGaps:true,
+      datalabels:lab(b,{borderColor:css(FR[s.k].tok),borderWidth:1,align:'top',anchor:'end',offset:3,formatter:v=>v==null?'':n0(v),
+        display:ctx=>{ if(S.labels==='off') return false; const v=ctx.dataset.data[ctx.dataIndex]; if(v==null) return false;
+          if(S.labels==='all'||sets.length===1) return true;
+          const arr=ctx.dataset.data.filter(x=>x!=null), i=ctx.dataIndex;
+          return v===Math.max(...arr)||v===Math.min(...arr)||i===ctx.dataset.data.length-1; }})}))},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18,right:12}},interaction:{mode:'index',intersect:false},
+      plugins:{glow:{on:true},legend:b.legend,tooltip:Object.assign({},b.tip,{callbacks:{label:c=>` ${c.dataset.label}: ₹${n1(c.parsed.y)}`}})},
+      scales:{x:{grid:{display:false},ticks:{color:b.ink2,maxRotation:0,autoSkip:true}},y:{beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>'₹'+v}}}}});
+}
+
+/* ---------- Cost by frame ---------- */
+function renderComp(days){
+  const b=base(), ks=selK(4), rows=[];
+  ks.forEach(k=>{
+    const ok=days.filter(d=>d.tot[k][4]!=null); if(!ok.length) return;
+    const pw=sum(ok.map(d=>prodOf(d,k))), av=f=>sum(ok.map(d=>f(d)*prodOf(d,k)))/pw;
+    rows.push({name:FR[k].name,wdg:k<3?av(d=>d.wc[k]):0,asy:k<3?av(d=>d.ac[k]):0,shl:(k===1||k===2)?av(d=>d.sc[k]):0,bld:k===3?av(d=>d.bc):0,cfp:k===4?av(d=>d.tot[k][0]):0,sup:av(d=>d.tot[k][1]),pf:av(d=>d.tot[k][3]),tot:av(d=>d.tot[k][4]),n:ok.length});
+  });
+  showEmpty('eComp',!rows.length);
+  const parts=[['Winding','wdg','--s1'],['Assembly','asy','--s2'],['Shell','shl','--s3'],['BLDC production','bld','--s6'],['Chimney production','cfp','--s7'],['Support','sup','--s4'],['P&F','pf','--s5']];
+  const ds=parts.filter(p=>rows.some(r=>r[p[1]]>0)).map(p=>({label:p[0],data:rows.map(r=>r[p[1]]),backgroundColor:css(p[2]),borderColor:b.surf,borderWidth:2,borderRadius:3,
+    datalabels:{display:ctx=>S.labels!=='off'&&ctx.dataset.data[ctx.dataIndex]>=(S.labels==='all'?1:12),color:css('--onseg'),font:{size:10.5,weight:'600'},formatter:v=>n0(v)}}));
+  ds.push({label:'Total',data:rows.map(()=>0),backgroundColor:'transparent',borderWidth:0,datalabels:{display:()=>S.labels!=='off',anchor:'end',align:'end',offset:2,color:b.ink,font:{size:12,weight:'700'},formatter:(v,ctx)=>'₹'+n0(rows[ctx.dataIndex].tot)}});
+  mk('cComp',{type:'bar',data:{labels:rows.map(r=>r.name),datasets:ds},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+    plugins:{legend:Object.assign({},b.legend,{labels:Object.assign({},b.legend.labels,{filter:i=>i.text!=='Total'})}),tooltip:Object.assign({},b.tip,{filter:i=>i.dataset.label!=='Total',callbacks:{label:c=>` ${c.dataset.label}: ₹${n1(c.parsed.y)}`,footer:i=>'Total ₹'+n1(rows[i[0].dataIndex].tot)+' · '+rows[i[0].dataIndex].n+' days'}})},
+    scales:{x:{stacked:true,grid:{display:false},ticks:{color:b.ink2}},y:{stacked:true,beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>'₹'+v}}}}});
+}
+
+/* ---------- Production ---------- */
+function renderProd(days){
+  const b=base(), ks=selK(4), st=S.stage;
+  const pv=(d,k)=> st==='asy'? prodOf(d,k) : (k<3?d.wp[k]:(k===3?d.bwp:0));
+  let ds=days; if(S.prodOnly) ds=days.filter(d=>ks.some(k=>pv(d,k)));
+  const sets=ks.map(k=>({k,data:ds.map(d=>pv(d,k)||0)})).filter(s=>sum(s.data)>0);
+  showEmpty('eProd',!sets.length);
+  const tot=ds.map((d,i)=>sum(sets.map(s=>s.data[i])));
+  const many=ds.length>12;
+  const dsets=sets.map(s=>({label:FR[s.k].name,data:s.data,backgroundColor:css(FR[s.k].tok),borderColor:b.surf,borderWidth:{top:2,right:0,bottom:0,left:0},borderRadius:2,
+    datalabels:{display:ctx=>S.labels==='all'&&!many&&ctx.dataset.data[ctx.dataIndex]>0,color:css('--onseg'),font:{size:10,weight:'600'},formatter:v=>n0(v)}}));
+  dsets.push({label:'Total',data:ds.map(()=>0),backgroundColor:'transparent',borderWidth:0,datalabels:{display:()=>S.labels!=='off',anchor:'end',align:'end',rotation:many?-90:0,offset:2,color:b.ink,font:{size:10.5,weight:'700'},formatter:(v,ctx)=>n0(tot[ctx.dataIndex])}});
+  mk('cProd',{type:'bar',data:{labels:ds.map(d=>dl(d.date)),datasets:dsets},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:many?34:22}},
+    plugins:{legend:Object.assign({},b.legend,{labels:Object.assign({},b.legend.labels,{filter:i=>i.text!=='Total'})}),tooltip:Object.assign({},b.tip,{filter:i=>i.dataset.label!=='Total',callbacks:{label:c=>` ${c.dataset.label}: ${n0(c.parsed.y)} motors`,footer:i=>'Total '+n0(tot[i[0].dataIndex])}})},
+    scales:{x:{stacked:true,grid:{display:false},ticks:{color:b.ink2,maxRotation:0,autoSkip:true}},y:{stacked:true,beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>n0(v)}}}}});
+}
+
+/* ---------- Man-hours ---------- */
+function renderHrs(days){
+  const b=base();
+  const cats=[['Winding + Varnish','+ Repair'],'Assembly','Shell','BLDC','Chimney',['Support','(10 depts)']];
+  const att=[sum(days.map(d=>d.att.wdg)),sum(days.map(d=>d.att.asy)),sum(days.map(d=>d.att.shl)),sum(days.map(d=>d.att.bldc)),sum(days.map(d=>d.att.cf)),sum(days.map(d=>d.att.sup))];
+  const cols=[css('--s1'),css('--s2'),css('--s3'),css('--s4'),css('--s5'),css('--s6')];
+  mk('cHrs',{type:'bar',data:{labels:cats,datasets:[{label:'Attendance hours',data:att,backgroundColor:cols,borderRadius:4,maxBarThickness:26,datalabels:{display:()=>S.labels!=='off',anchor:'end',align:'end',color:b.ink,font:{size:11,weight:'700'},formatter:v=>n0(v)}}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:48}},plugins:{legend:{display:false},tooltip:Object.assign({},b.tip,{callbacks:{label:c=>` ${n0(c.parsed.x)} man-hours`}})},
+      scales:{x:{beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>n0(v)}},y:{grid:{display:false},ticks:{color:b.ink2}}}}});
+}
+
+/* ---------- Line-wise ---------- */
+function renderLine(days){
+  const b=base(), dept=S.lineDept, set=new Set(days.map(d=>d.date));
+  let metric=S.lineMetric; if(dept==='BLDC Winding') metric='prod';
+  const psc=dept.startsWith('PSC'), fmap=['C','E','H'];
+  const rows=DATA.lines.filter(r=>r[0]===dept&&set.has(r[1])&&(!psc||S.frames[fmap.indexOf(r[3])]));
+  const maxL=psc?10:3, acc={}; for(let l=1;l<=maxL;l++) acc[l]={p:0,c:0,h:0};
+  rows.forEach(r=>{const a=acc[r[2]]; if(!a) return; a.p+=r[4]||0; a.c+=r[7]||0; a.h+=r[5]||0;});
+  const ls=Object.keys(acc).map(Number).filter(l=>acc[l].p>0);
+  const col=css(dept==='PSC Winding'?'--s1':dept==='PSC Assy'?'--s2':dept==='BLDC Assy'?'--s4':'--s3');
+  const data=ls.map(l=>metric==='cost'?acc[l].c/acc[l].p:acc[l].p);
+  $('lineTitle').textContent=(dept==='PSC Assy'?'PSC Assembly':dept==='BLDC Assy'?'BLDC Assembly':dept)+' by line';
+  $('lineSub').textContent=metric==='cost'?'Labour cost per motor (₹) per line'+(psc?', selected frames':''):'Motors produced per line'+(dept==='BLDC Winding'?' (no cost block for BLDC Winding in your logic)':psc?', selected frames':'');
+  $('lineMetric').value=metric;
+  showEmpty('eLine',!ls.length);
+  mk('cLine',{type:'bar',data:{labels:ls.map(l=>'Line '+l),datasets:[{label:metric==='cost'?'₹ per motor':'Motors',data,backgroundColor:col,borderRadius:5,maxBarThickness:46,
+    datalabels:{display:()=>S.labels!=='off',anchor:'end',align:'end',color:b.ink,font:{size:11,weight:'700'},formatter:v=>metric==='cost'?'₹'+n0(v):n0(v)}}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},plugins:{legend:{display:false},tooltip:Object.assign({},b.tip,{callbacks:{label:c=>{const a=acc[ls[c.dataIndex]];return [` ${metric==='cost'?'₹'+n1(c.parsed.y)+' per motor':n0(c.parsed.y)+' motors'}`,` ${n0(a.p)} motors · ${n0(a.h)} booked hrs`];}}})},
+      scales:{x:{grid:{display:false},ticks:{color:b.ink2}},y:{beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>metric==='cost'?'₹'+v:n0(v)}}}}});
+}
+
+/* ---------- Timeline ---------- */
+function renderTimeline(days){
+  const ks=selK(4), all=DATA.days, vals=all.map(d=>sum(ks.map(k=>prodOf(d,k)))), mx=Math.max(1,...vals), top=vals.indexOf(Math.max(...vals));
+  $('tlbars').innerHTML=all.map((d,i)=>{ const on=d.date>=S.from&&d.date<=S.to, h=vals[i]?Math.max(6,Math.round(vals[i]/mx*62)):3;
+    const bv=S.labels==='off'||!vals[i]?'':(S.labels==='all'||i===top)?`<span class="bv">${(vals[i]/1000).toFixed(1)}k</span>`:'';
+    return `<button type="button" class="tb${on?' on':''}${vals[i]?'':' z'}" data-d="${d.date}" title="${dl(d.date)} · ${dow(d.date)}: ${n0(vals[i])} motors">${bv}<i style="height:${h}px"></i><span class="bd">${+d.date.slice(8)}</span></button>`; }).join('');
+  let s=0,p=0,m=0; days.forEach(d=>ks.forEach(k=>{const t=d.tot[k][4],q=prodOf(d,k); if(q) m+=q; if(t!=null&&q){s+=t*q;p+=q;}}));
+  const one=S.from===S.to;
+  $('tlInfo').innerHTML=one?`<b>${dow(S.from)} ${dl(S.from)}</b> · ${n0(m)} motors${p?' · avg <b>'+rs(s/p)+'</b> per motor':' · no cost (no production)'}`:`<b>${dl(S.from)} – ${dl(S.to)}</b> · ${days.length} days · ${n0(m)} motors${p?' · avg <b>'+rs(s/p)+'</b> per motor':''}`;
+}
+
+/* ---------- Costliest days ---------- */
+function renderLeader(days){
+  const ks=selK(4), items=[];
+  ks.forEach(k=>days.forEach(d=>{const t=d.tot[k][4]; if(t!=null) items.push({k,d:d.date,t});}));
+  if(!items.length){ $('lb').innerHTML='<div style="color:var(--muted)">No cost days for this selection.</div>'; return; }
+  items.sort((a,b)=>b.t-a.t);
+  const hi=items[0], lo=items[items.length-1], rows=[['Highest',hi,'--bad']]; if(items.length>1) rows.push(['Lowest',lo,'--good']);
+  $('lb').innerHTML=rows.map(([lab,i,c])=>`<button type="button" class="hlr" data-d="${i.d}" title="Click to focus on ${dl(i.d)}"><span class="tag" style="color:var(${c});border-color:var(${c})">${lab}</span><div class="who"><b><span class="dot" style="background:var(${FR[i.k].tok})"></span>${FR[i.k].name}</b><span>${dl(i.d)} · ${dow(i.d)}</span></div><div class="val">₹${n0(i.t)}</div></button>`).join('')+
+    (items.length>1&&lo.t>0?`<div class="spread">Gap between them: <b>₹${n0(hi.t-lo.t)}</b> (highest is ${n1(hi.t/lo.t)}× the lowest)</div>`:'');
+}
+
+/* ---------- Table ---------- */
+function renderTable(days){
+  const ks=selK(4); let ds=days; if(S.prodOnly) ds=days.filter(d=>ks.some(k=>d.tot[k][4]!=null||prodOf(d,k)));
+  if(!ks.length||!ds.length){ $('tbl').innerHTML='<tbody><tr><td style="text-align:left;color:var(--muted)">No rows for this selection.</td></tr></tbody>'; return; }
+  const range=ks.map(k=>{const v=ds.map(d=>d.tot[k][4]).filter(x=>x!=null);return v.length?[Math.min(...v),Math.max(...v)]:[0,1];});
+  let h='<thead><tr><th>'+(S.view==='d'?'Date':UN[S.view][1])+'</th><th>'+(S.view==='d'?'Day':'Days')+'</th>'+ks.map(k=>`<th>${FR[k].name} motors</th><th>${FR[k].name} ₹/motor</th>`).join('')+'</tr></thead><tbody>';
+  ds.forEach(d=>{ h+=`<tr><td>${dl(d.date)}</td><td style="text-align:right;color:var(--muted)">${dow(d.date)}</td>`+ks.map((k,i)=>{
+    const t=d.tot[k][4], p=prodOf(d,k); const r=range[i]; const pct=t==null?0:Math.round(((t-r[0])/((r[1]-r[0])||1))*40);
+    return `<td>${p?n0(p):'–'}</td><td style="background:color-mix(in srgb,var(${FR[k].tok}) ${pct}%,transparent)">${t==null?'–':n1(t)}</td>`;}).join('')+'</tr>'; });
+  h+='</tbody><tfoot><tr><td>Total / avg</td><td></td>'+ks.map(k=>{
+    let s=0,p=0; ds.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}});
+    return `<td>${n0(sum(ds.map(d=>prodOf(d,k))))}</td><td>${p?n1(s/p):'–'}</td>`;}).join('')+'</tr></tfoot>';
+  $('tbl').innerHTML=h;
+}
+
+function render(){
+  const days=rangeDays(), bd=bucketize(days);
+  renderHeadline(days); renderTimeline(days); renderDonut(days); renderHeat(bd); renderTrend(bd); renderComp(days); renderProd(bd); renderWater(days); renderScatter(bd); renderHrs(days); renderLeader(bd); renderLine(days); renderInsights(days); renderTable(bd); updateTitles(); renderCons();
+}
+
+/* ---------- Controls (dropdowns) ---------- */
+const MONTHS=[...new Set(DATA.days.map(d=>d.date.slice(0,7)))];
+const monLab=k=>new Date(+k.slice(0,4),+k.slice(5,7)-1,1).toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+const p2=n=>String(n).padStart(2,'0');
+function monthRange(k){ const a=DATA.days.filter(d=>d.date.startsWith(k)); return a.length?[a[0].date,a[a.length-1].date]:null; }
+function weekRanges(k){ const o=[]; [[1,7],[8,14],[15,21],[22,28],[29,31]].forEach((w,i)=>{ const a=DATA.days.filter(d=>d.date.startsWith(k)&&+d.date.slice(8)>=w[0]&&+d.date.slice(8)<=w[1]); if(a.length) o.push({i,from:a[0].date,to:a[a.length-1].date,lab:'Week '+(i+1)+' · '+a[0].date.slice(8)+'–'+a[a.length-1].date.slice(8)+' '+monLab(k).slice(0,3)}); }); return o; }
+function curMonthRange(){ return monthRange(S.to.slice(0,7))||[DATA.days[0].date,DATA.days[DATA.days.length-1].date]; }
+const FNAME=['Frame C','Frame E','Frame H','BLDC','Chimney'];
+function fillDates(){
+  const o=DATA.days.map(d=>`<option value="${d.date}">${dl(d.date)} · ${dow(d.date)}</option>`).join('');
+  $('from').innerHTML=o; $('to').innerHTML=o;
+  $('range').innerHTML=MONTHS.slice().reverse().map(k=>`<optgroup label="${monLab(k)}"><option value="m${k}">Full month · ${monLab(k)}</option>`+weekRanges(k).map(w=>`<option value="w${k}_${w.i}">${w.lab}</option>`).join('')+'</optgroup>').join('')+
+    '<optgroup label="Daily review">'+DATA.days.map(d=>`<option value="d${d.date}">${dl(d.date)} · ${dow(d.date)}</option>`).join('')+'</optgroup>'+
+    '<option value="custom">Custom range</option>';
+}
+function syncRange(){
+  let v='custom';
+  const mk=MONTHS.find(k=>{ const r=monthRange(k); return r[0]===S.from&&r[1]===S.to; });
+  if(mk) v='m'+mk;
+  else if(S.from===S.to) v='d'+S.from;
+  else MONTHS.forEach(k=>weekRanges(k).forEach(w=>{ if(w.from===S.from&&w.to===S.to) v='w'+k+'_'+w.i; }));
+  $('range').value=v;
+}
+function frameSummary(){
+  const on=[0,1,2,3,4].filter(i=>S.frames[i]);
+  $('frameSum').textContent=on.length===5?'All frames':on.length?on.map(i=>FNAME[i]).join(', '):'None selected';
+}
+function buildFrameMenu(){
+  $('frameMenu').innerHTML='<div class="mrow"><button type="button" data-a="all">Select all</button><button type="button" data-a="none">Clear</button></div>'+
+    FR.map((f,i)=>`<label class="opt"><input type="checkbox" data-i="${i}" ${S.frames[i]?'checked':''}><span class="dot" style="background:var(${f.tok})"></span>${f.name}</label>`).join('');
+  frameSummary();
+}
+function syncControls(){
+  $('from').value=S.from; $('to').value=S.to; syncRange();
+  $('metric').value=S.metric; $('daysSel').value=S.prodOnly?'prod':'all'; $('labelSel').value=S.labels;
+  $('viewBy').value=S.view; syncRg(); $('stage').value=S.stage; $('lineMetric').value=S.lineMetric; $('lineDept').value=S.lineDept;
+  buildFrameMenu();
+}
+function setRange(a,b){ if(a>b){const t=a;a=b;b=t;} S.from=a; S.to=b; $('from').value=a; $('to').value=b; syncRange(); syncRg(); render(); }
+$('frameMenu').addEventListener('change',e=>{ const c=e.target.closest('input[type=checkbox]'); if(!c) return; S.frames[+c.dataset.i]=c.checked?1:0; frameSummary(); render(); });
+$('frameMenu').addEventListener('click',e=>{ const b=e.target.closest('button[data-a]'); if(!b) return; S.frames=b.dataset.a==='all'?[1,1,1,1,1]:[0,0,0,0,0]; buildFrameMenu(); render(); });
+$('range').addEventListener('change',()=>{ const v=$('range').value;
+  if(v[0]==='m'){ const r=monthRange(v.slice(1)); setRange(r[0],r[1]); }
+  else if(v[0]==='w'){ const [k,i]=v.slice(1).split('_'); const w=weekRanges(k).find(x=>x.i==+i); if(w) setRange(w.from,w.to); }
+  else if(v[0]==='d') setRange(v.slice(1),v.slice(1)); });
+$('from').addEventListener('change',()=>{ const a=$('from').value; setRange(a,S.to<a?a:S.to); });
+$('to').addEventListener('change',()=>{ const b=$('to').value; setRange(S.from>b?b:S.from,b); });
+$('viewBy').addEventListener('change',()=>{ S.view=$('viewBy').value; if(S.view!=='d'&&S.from===S.to){ const r=curMonthRange(); setRange(r[0],r[1]); } else render(); });
+$('metric').addEventListener('change',()=>{S.metric=$('metric').value; render();});
+$('daysSel').addEventListener('change',()=>{S.prodOnly=$('daysSel').value==='prod'; render();});
+$('labelSel').addEventListener('change',()=>{S.labels=$('labelSel').value; render();});
+$('stage').addEventListener('change',()=>{S.stage=$('stage').value; render();});
+$('lineMetric').addEventListener('change',()=>{S.lineMetric=$('lineMetric').value; render();});
+$('lineDept').addEventListener('change',()=>{S.lineDept=$('lineDept').value; render();});
+$('heat').addEventListener('click',e=>{const c=e.target.closest('[data-d]'); if(c) focusKey(c.dataset.d);});
+$('lb').addEventListener('click',e=>{const c=e.target.closest('[data-d]'); if(c) focusKey(c.dataset.d);});
+$('tiles').addEventListener('click',e=>{const b=e.target.closest('[data-i]'); if(!b) return; const i=+b.dataset.i; const only=S.frames.filter(Boolean).length===1&&S.frames[i]; S.frames=only?[1,1,1,1,1]:[0,1,2,3,4].map(j=>j===i?1:0); buildFrameMenu(); render();});
+$('tlbars').addEventListener('click',e=>{const c=e.target.closest('[data-d]'); if(c) setRange(c.dataset.d,c.dataset.d);});
+$('tlAll').addEventListener('click',()=>{ const r=curMonthRange(); setRange(r[0],r[1]); });
+const SVG_FS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', SVG_XF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+function setPresentIcon(on){ $('present').innerHTML=on?SVG_XF:SVG_FS; $('present').title=on?'Exit presentation':'Full screen presentation'; }
+$('present').addEventListener('click',()=>{ const on=document.body.classList.toggle('present'); setPresentIcon(on);
+  const el=document.documentElement, rf=el.requestFullscreen||el.webkitRequestFullscreen, xf=document.exitFullscreen||document.webkitExitFullscreen;
+  const hint=()=>{ let h=$('fsHint'); if(!h){ h=document.createElement('div'); h.id='fsHint'; h.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:90;background:#0a1428;color:#f2f5fa;border:1px solid #2a4075;border-radius:10px;padding:10px 16px;font:500 13px system-ui,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)'; document.body.appendChild(h); } h.textContent='Browser blocked full screen here. Press F11 (or open the page in its own tab) for true full screen. Esc exits presentation.'; h.hidden=false; setTimeout(()=>{h.hidden=true;},6000); };
+  try{ if(on){ if(rf){ const p=rf.call(el); if(p&&p.catch) p.catch(hint); } else hint(); } else if(document.fullscreenElement||document.webkitFullscreenElement){ const p=xf.call(document); if(p&&p.catch) p.catch(()=>{}); } }catch(e){ if(on) hint(); }
+  setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),150); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.body.classList.contains('present')) $('present').click(); });
+document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement&&document.body.classList.contains('present')){ document.body.classList.remove('present'); setPresentIcon(false); } });
+$('reset').addEventListener('click',()=>{Object.assign(S,JSON.parse(JSON.stringify(DEF))); syncControls(); render();});
+function eff(){ return document.documentElement.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); }
+function themeIcon(){ $('themeBtn').textContent=eff()==='dark'?'🌙':'☀️'; }
+$('themeBtn').addEventListener('click',()=>{ document.documentElement.setAttribute('data-theme',eff()==='dark'?'light':'dark'); themeIcon(); });
+new MutationObserver(()=>render()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render());
+function sbSet(h){ document.body.classList.toggle('sbhide',h); $('sbToggle').setAttribute('aria-expanded',String(!h)); setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),60); }
+$('sbToggle').addEventListener('click',()=>sbSet(!document.body.classList.contains('sbhide')));
+if(matchMedia('(max-width:900px)').matches) sbSet(true);
+const CONS={days:[{"date":"2026-10-01","cost":5756.4,"p":[0,0,0,0,0]},{"date":"2026-10-02","cost":36643.16,"p":[0,0,0,0,0]},{"date":"2026-10-03","cost":13031.28,"p":[0,0,0,0,0]},{"date":"2026-10-04","cost":27758.52,"p":[0,0,0,0,0]},{"date":"2026-10-05","cost":104218.65,"p":[721,0,1958,495,690]},{"date":"2026-10-06","cost":97102.8,"p":[213,0,1464,587,316]},{"date":"2026-10-07","cost":96789.71,"p":[0,0,2293,531,810]},{"date":"2026-10-08","cost":103933.64,"p":[977,0,2544,801,900]},{"date":"2026-10-09","cost":103714.65,"p":[995,0,3320,810,1022]},{"date":"2026-10-10","cost":105853.95,"p":[1163,0,2819,756,1843]},{"date":"2026-10-11","cost":23931,"p":[0,0,0,0,0]},{"date":"2026-10-12","cost":100112.33,"p":[689,766,3621,1374,2421]},{"date":"2026-10-13","cost":102283.27,"p":[1000,752,3349,1116,2455]},{"date":"2026-10-14","cost":111699.86,"p":[0,1550,2559,1019,1823]},{"date":"2026-10-15","cost":114961.73,"p":[575,1000,2656,1428,1923]},{"date":"2026-10-16","cost":91670.51,"p":[2147,0,3542,1145,1510]},{"date":"2026-10-17","cost":89457.75,"p":[603,800,3818,1309,1232]},{"date":"2026-10-18","cost":12060,"p":[0,0,0,0,0]},{"date":"2026-10-19","cost":85414.84,"p":[1026,476,3185,1140,1543]},{"date":"2026-10-20","cost":11123.91,"p":[0,0,0,0,0]},{"date":"2026-10-21","cost":120793.95,"p":[485,0,3811,1172,1898]},{"date":"2026-10-22","cost":132016.84,"p":[0,0,3557,1359,1916]},{"date":"2026-10-23","cost":169309.01,"p":[0,221,1862,1297,1617]},{"date":"2026-10-24","cost":64655.89,"p":[801,147,3672,1444,1900]},{"date":"2026-10-25","cost":11883.04,"p":[0,0,0,0,0]},{"date":"2026-10-26","cost":104986.57,"p":[925,1088,5095,1604,2188]},{"date":"2026-10-27","cost":105286.73,"p":[0,1866,4497,1828,2157]},{"date":"2026-10-28","cost":105979.39,"p":[774,768,4679,2435,910]},{"date":"2026-10-29","cost":99806.18,"p":[1956,0,4724,1793,917]},{"date":"2026-10-30","cost":88753.5,"p":[1015,4,4495,1480,1842]},{"date":"2026-10-31","cost":112343.18,"p":[930,0,3851,972,2724]},{"date":"2026-11-01","cost":15839.1,"p":[0,0,0,0,0]},{"date":"2026-11-02","cost":98988.02,"p":[0,0,3185,1125,1960]},{"date":"2026-11-03","cost":115829.34,"p":[1165,0,3519,901,3210]},{"date":"2026-11-04","cost":113441.21,"p":[2444,0,3366,928,2395]},{"date":"2026-11-05","cost":115984.26,"p":[1669,452,4880,1154,3686]},{"date":"2026-11-06","cost":134434.18,"p":[1659,49,3538,1124,3721]},{"date":"2026-11-07","cost":77400.06,"p":[834,0,2058,812,2202]},{"date":"2026-11-08","cost":14580,"p":[0,0,0,0,0]},{"date":"2026-11-09","cost":14400,"p":[0,0,0,0,0]},{"date":"2026-11-10","cost":17816.4,"p":[0,0,0,0,0]},{"date":"2026-11-11","cost":11520,"p":[0,0,0,0,0]},{"date":"2026-11-12","cost":103620.23,"p":[0,0,2498,870,2837]},{"date":"2026-11-13","cost":108587.55,"p":[0,0,3633,910,2845]},{"date":"2026-11-14","cost":100440.09,"p":[0,0,0,0,0]},{"date":"2026-11-15","cost":11160,"p":[0,0,0,0,0]},{"date":"2026-11-16","cost":102708.68,"p":[0,0,3278,1338,2456]},{"date":"2026-11-17","cost":102406.29,"p":[0,0,3637,1426,3133]}]}; /* {date, cost: total P&F cost of the day (Rs), p:[BLDC-IDU, BLDC-ODU, PSC-C, PSC-H, PSC-E] motors} */
+const PFF=[['BLDC-IDU','--s2','BLDC'],['BLDC-ODU','--s4','BLDC'],['PSC-C','--s1','PSC'],['PSC-H','--s7','PSC'],['PSC-E','--s3','PSC']];
+const inr=x=>{ if(x==null||isNaN(x)) return '–'; const a=Math.abs(x); return a>=1e7?'₹'+(x/1e7).toFixed(2)+' Cr':a>=1e5?'₹'+(x/1e5).toFixed(2)+' L':'₹'+n0(x); };
+const rs0=x=>x==null?'–':'₹'+n0(x), rs2=x=>x==null?'–':'₹'+x.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+function bkOf(date){ if(S.view==='d') return [date,dl(date)]; if(S.view==='w'){ const i=isoWeek(date); return ['w'+i,i]; } return [date.slice(0,7),new Date(date+'T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'})]; }
+let PFX=null, PFS=null;
+const lblOn=(ctx,n)=>{ if(S.labels==='off') return false; if(S.labels==='all'||n<=16) return true; const st=Math.ceil(n/12); return ctx.dataIndex%st===0||ctx.dataIndex===n-1; };
+const shK=v=>v>=1e5?(v/1e5).toFixed(1)+'L':n0(v);
+function renderCons(){
+  $('consActive').innerHTML=$('active').innerHTML;
+  $('pfDept').value=S.dept;
+  const ok=new Set(rangeDays().map(d=>d.date)), rows=CONS.days.filter(r=>ok.has(r.date));
+  $('consEmpty').hidden=rows.length>0; $('consData').hidden=!rows.length;
+  if(!rows.length){ PFX=null; $('consEmptyTxt').textContent=CONS.days.length?'No P&F cost for the selected dates.':'No P&F cost found. Put the Maintenance Daily MIS in the Electric_Consumption folder and run the update: the column "Total P&F Cost (₹)" is read for every day.'; return; }
+  const b=base(), tx=css('--muted'), col=PFF.map(f=>css(f[1]));
+  const D=S.dept, isAll=D==='all', sel=PFF.map((f,i)=>(isAll||f[2]===D)?i:-1).filter(i=>i>=0), DNAME=isAll?'All':D;
+  const days=rows.map(r=>{ const t=sum(r.p), fc=r.p.map(x=>t?r.cost*x/t:0); return {date:r.date,cost:r.cost,p:r.p,t,fc,un:t?0:r.cost}; });
+  const g={}; days.forEach(d=>{ const [k,l]=bkOf(d.date), o=g[k]=g[k]||{l,cost:0,un:0,fc:[0,0,0,0,0],p:[0,0,0,0,0]}; o.cost+=d.cost; o.un+=d.un; d.fc.forEach((x,i)=>{o.fc[i]+=x; o.p[i]+=d.p[i];}); });
+  const L=Object.keys(g).sort().map(k=>g[k]);
+  const T={cost:sum(days.map(d=>d.cost)),un:sum(days.map(d=>d.un)),fc:PFF.map((_,i)=>sum(days.map(d=>d.fc[i]))),p:PFF.map((_,i)=>sum(days.map(d=>d.p[i])))};
+  const M=sum(T.p), AL=T.cost-T.un, dep=n=>{const ix=PFF.map((f,i)=>f[2]===n?i:-1).filter(i=>i>=0); return {c:sum(ix.map(i=>T.fc[i])),m:sum(ix.map(i=>T.p[i]))};}, DB=dep('BLDC'), DP=dep('PSC');
+  const SM=sum(sel.map(i=>T.p[i])), SC=sum(sel.map(i=>T.fc[i]));
+  const sCost=x=>sum(sel.map(i=>x.fc[i])), sMot=x=>sum(sel.map(i=>x.p[i]));
+  const card=(k,v,s,ac)=>`<div class="card" style="--ac:${ac}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  $('consKpis').innerHTML=(isAll?[
+    card('Total P&F cost',inr(T.cost),rs0(T.cost)+' · '+days.length+' days',css('--s1')),
+    card('Allocated to frames',inr(AL),T.cost?Math.round(AL/T.cost*100)+'% of total':'',css('--s3')),
+    card('Unallocated',inr(T.un),'days with no production'+(T.cost?' · '+(T.un/T.cost*100).toFixed(1)+'%':''),css('--s4')),
+    card('Motors made',n0(M),'BLDC '+n0(DB.m)+' · PSC '+n0(DP.m),css('--s7')),
+    card('All-in P&F / motor',M?rs2(T.cost/M):'–','total cost incl. unallocated ÷ motors',css('--s2')),
+    card('Allocated P&F / motor',M?rs2(AL/M):'–','BLDC '+(DB.m?rs2(DB.c/DB.m):'–')+' · PSC '+(DP.m?rs2(DP.c/DP.m):'–'),css('--s5'))
+  ]:[
+    card(D+' P&F cost',inr(SC),rs0(SC)+' · '+days.length+' days',css(D==='BLDC'?'--s2':'--s1')),
+    card('Share of plant P&F',T.cost?(SC/T.cost*100).toFixed(1)+'%':'–','of total '+inr(T.cost)+' (incl. unallocated)',css('--s3')),
+    card(D+' motors made',n0(SM),sel.map(i=>PFF[i][0].split('-')[1]+' '+n0(T.p[i])).join(' · '),css('--s7')),
+    card(D+' P&F / motor',SM?rs2(SC/SM):'–','allocated cost ÷ '+D+' motors',css('--s5')),
+    card('Plant all-in P&F / motor',M?rs2(T.cost/M):'–','all departments, incl. unallocated',css('--s2')),
+    card('Unallocated (plant)',inr(T.un),'days with no production',css('--s4'))
+  ]).join('');
+  const pd=days.filter(d=>sMot(d)>0), hi=pd.slice().sort((a,c)=>c.cost/c.t-a.cost/a.t)[0], lo=pd.slice().sort((a,c)=>a.cost/a.t-c.cost/c.t)[0];
+  $('pfRec').innerHTML=(isAll?`<span>Allocated + Unallocated = Total: <b>${rs0(AL)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`:`<span>${D} + other department + Unallocated = Total: <b>${rs0(SC)} + ${rs0(AL-SC)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`)+(hi?`<span>Highest day: <b>${dl(hi.date)} · ${rs2(hi.cost/hi.t)}</b>/motor (${n0(sMot(hi))} ${isAll?'':D+' '}motors)</span><span>Lowest day: <b>${dl(lo.date)} · ${rs2(lo.cost/lo.t)}</b>/motor (${n0(sMot(lo))} ${isAll?'':D+' '}motors)</span>`:'');
+  $('pfStackT').textContent='Where the P&F money goes'+(isAll?'':' · '+D)+' · '+UN[S.view][2].toLowerCase();
+  const mix={interaction:{mode:'index',intersect:false}};
+  const stk=L.map(x=>sCost(x)+(isAll?x.un:0)), mxS=Math.max(1,...stk);
+  const segLbl=(i)=>({display:ctx=>{ const v=ctx.dataset.data[ctx.dataIndex]; if(S.labels==='off'||!v) return false; if(S.labels==='all') return true; return L.length<=10&&v>=mxS*0.07; },color:css('--onseg'),font:{size:10,weight:'600'},anchor:'center',align:'center',formatter:v=>shK(v)});
+  mk('cPfStack',{data:{labels:L.map(x=>x.l),datasets:[
+    ...sel.map(i=>({type:'bar',label:PFF[i][0],data:L.map(x=>Math.round(x.fc[i])),backgroundColor:col[i],stack:'a',borderRadius:2,yAxisID:'y',datalabels:segLbl(i)})),
+    ...(isAll?[{type:'bar',label:'Unallocated (no production)',data:L.map(x=>Math.round(x.un)),backgroundColor:tx+'88',stack:'a',borderRadius:2,yAxisID:'y',datalabels:Object.assign(segLbl(),{color:b.ink})}]:[]),
+    {type:'line',label:isAll?'All-in ₹ / motor':D+' ₹ / motor',data:L.map(x=>{const m=isAll?sum(x.p):sMot(x), c=isAll?x.cost:sCost(x); return m?+(c/m).toFixed(2):null;}),borderColor:css('--s5'),backgroundColor:css('--s5'),borderWidth:2.5,pointRadius:3.5,pointHoverRadius:6,tension:.3,spanGaps:true,yAxisID:'y1',
+      datalabels:{display:ctx=>lblOn(ctx,L.length)&&ctx.dataset.data[ctx.dataIndex]!=null,align:'top',anchor:'end',color:b.ink,backgroundColor:b.surf,borderRadius:3,padding:{top:1,bottom:1,left:3,right:3},font:{size:10.5,weight:'700'},formatter:v=>v==null?'':'₹'+v.toFixed(1)}}]},
+    options:Object.assign({responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},plugins:{legend:b.legend,tooltip:Object.assign({},b.tip,{callbacks:{label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?rs2(c.parsed.y):rs0(c.parsed.y))}})},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:b.grid},border:{display:false},title:{display:true,text:'P&F cost (₹)'},ticks:{callback:v=>inr(v)}},y1:{position:'right',beginAtZero:true,grid:{display:false},border:{display:false},title:{display:true,text:'₹ per motor'}}}},mix)});
+  const dn=[...sel.map(i=>[PFF[i][0],T.fc[i],col[i]]),...(isAll?[['Unallocated',T.un,tx+'88']]:[])].filter(x=>x[1]>0.5), dnT=sum(dn.map(x=>x[1]))||1;
+  mk('cPfDonut',{type:'doughnut',data:{labels:dn.map(x=>x[0]),datasets:[{data:dn.map(x=>Math.round(x[1])),backgroundColor:dn.map(x=>x[2]),borderColor:b.surf,borderWidth:3,hoverOffset:8,
+      datalabels:{display:ctx=>S.labels!=='off'&&ctx.dataset.data[ctx.dataIndex]/dnT>=(S.labels==='all'?0.02:0.06),color:ctx=>dn[ctx.dataIndex][0]==='Unallocated'?b.ink:css('--onseg'),font:{size:11,weight:'700'},formatter:v=>(v/dnT*100).toFixed(0)+'%'}}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:b.legend,tooltip:Object.assign({},b.tip,{callbacks:{label:c=>' '+c.label+': '+rs0(c.parsed)+' ('+(c.parsed/dnT*100).toFixed(1)+'%)'}})}},
+    plugins:[{id:'pfc',afterDraw(ch){ const a=ch.chartArea, x=ch.ctx; x.save(); x.textAlign='center'; x.fillStyle=b.ink; x.font='700 22px '+css('--font-d'); x.fillText(inr(isAll?T.cost:SC),(a.left+a.right)/2,(a.top+a.bottom)/2+4); x.fillStyle=tx; x.font='600 11px '+css('--font'); x.fillText(isAll?'TOTAL P&F':D+' P&F',(a.left+a.right)/2,(a.top+a.bottom)/2+22); x.restore(); }}]});
+  /* P&F cost per motor: line graph, filtered by department */
+  const pm=sel.map(i=>[PFF[i][0],T.p[i]?T.fc[i]/T.p[i]:null,col[i]]);
+  if(isAll||D==='BLDC') pm.push(['BLDC dept',DB.m?DB.c/DB.m:null,css('--s2')]);
+  if(isAll||D==='PSC') pm.push(['PSC dept',DP.m?DP.c/DP.m:null,css('--s1')]);
+  const allIn=M?+(T.cost/M).toFixed(2):null, aiC=css('--s4');
+  const lc=isAll?css('--hud'):css(D==='BLDC'?'--s2':'--s1');
+  mk('cPfPm',{type:'line',data:{labels:pm.map(x=>x[0]),datasets:[
+    {label:'₹ per motor',data:pm.map(x=>x[1]==null?null:+x[1].toFixed(2)),borderColor:lc,borderWidth:3,tension:.25,spanGaps:true,pointRadius:7,pointHoverRadius:9,pointBackgroundColor:pm.map(x=>x[2]),pointBorderColor:b.surf,pointBorderWidth:2,order:1,
+      datalabels:{display:ctx=>S.labels!=='off'&&ctx.dataset.data[ctx.dataIndex]!=null,anchor:'end',align:'top',offset:6,color:b.ink,backgroundColor:b.surf,borderRadius:3,padding:{top:1,bottom:1,left:4,right:4},font:{size:11,weight:'700'},formatter:v=>'₹'+v.toFixed(2)}},
+    {label:'All-in ₹'+(allIn==null?'–':allIn.toFixed(2)),data:pm.map(()=>allIn),borderColor:aiC,borderWidth:2,borderDash:[7,5],pointRadius:0,pointHoverRadius:0,order:2,
+      datalabels:{display:ctx=>S.labels!=='off'&&allIn!=null&&ctx.dataIndex===pm.length-1,anchor:'end',align:'top',offset:4,color:aiC,backgroundColor:b.surf,borderRadius:3,padding:{top:1,bottom:1,left:4,right:4},font:{size:11,weight:'700'},formatter:()=>'All-in ₹'+allIn.toFixed(2)}}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,right:14}},plugins:{legend:{display:true,position:'bottom',labels:Object.assign({},b.legend.labels,{usePointStyle:true})},tooltip:Object.assign({},b.tip,{callbacks:{label:c=>' '+c.dataset.label.replace(/^₹ per motor$/,'Per motor')+(c.datasetIndex===0?': '+rs2(c.parsed.y):'')}})},interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},offset:true},y:{beginAtZero:false,grace:'15%',grid:{color:b.grid},border:{display:false},ticks:{callback:v=>'₹'+(+v.toFixed(2))}}}}});
+  let run=0; const cum=days.map(d=>+(run+=(isAll?d.cost:sCost(d))).toFixed(0)), c1=css(isAll?'--s1':(D==='BLDC'?'--s2':'--s1'));
+  mk('cPfCum',{type:'line',data:{labels:days.map(d=>dl(d.date)),datasets:[{label:'Cumulative P&F cost'+(isAll?'':' · '+D),data:cum,borderColor:c1,borderWidth:3,pointRadius:days.length>20?0:3,pointHoverRadius:6,tension:.25,fill:true,
+      backgroundColor:ctx=>{ const a=ctx.chart.chartArea; if(!a) return c1+'33'; const gr=ctx.chart.ctx.createLinearGradient(0,a.top,0,a.bottom); gr.addColorStop(0,c1+'88'); gr.addColorStop(1,c1+'05'); return gr; },
+      datalabels:{display:ctx=>lblOn(ctx,cum.length),align:ctx=>ctx.dataIndex===cum.length-1?'left':'top',anchor:'end',color:b.ink,backgroundColor:b.surf,borderRadius:3,padding:3,font:{size:10.5,weight:'700'},formatter:v=>inr(v)}}]},
+    options:Object.assign({responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,right:8}},plugins:{legend:{display:false},tooltip:Object.assign({},b.tip,{callbacks:{label:c=>' '+rs0(c.parsed.y)}})},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true}},y:{beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{callback:v=>inr(v)}}}},mix)});
+  const dd=pd.map(d=>({l:dl(d.date),v:d.cost/d.t})), av=(isAll?M?T.cost/M:0:SM?SC/SM:0);
+  mk('cPfDay',{data:{labels:dd.map(x=>x.l),datasets:[{type:'bar',label:(isAll?'All-in':D)+' ₹ / motor',data:dd.map(x=>+x.v.toFixed(2)),backgroundColor:dd.map(x=>x.v>av*1.25?css('--s5'):x.v<av*.85?css('--s3'):css('--s1')),borderRadius:5,order:2,
+      datalabels:{display:ctx=>lblOn(ctx,dd.length),anchor:'end',align:'end',color:b.ink,font:{size:10,weight:'700'},formatter:v=>'₹'+v.toFixed(1)}},
+      {type:'line',label:'Average ₹'+av.toFixed(2),data:dd.map(()=>+av.toFixed(2)),borderColor:css('--s4'),borderDash:[6,5],borderWidth:2,pointRadius:0,order:1,datalabels:{display:false}}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},plugins:{legend:b.legend,tooltip:Object.assign({},b.tip,{callbacks:{label:c=>' '+c.dataset.label+': '+rs2(c.parsed.y)}})},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{callback:v=>'₹'+v}}}}});
+  const dot=i=>`<span class="pfd" style="background:${col[i]}"></span>`;
+  const depTot=(n,o)=>`<tr class="pft"><td colspan="2">${n} total</td><td>${n0(o.m)}</td><td>${M?(o.m/M*100).toFixed(1)+'%':'–'}</td><td></td><td>${rs0(o.c)}</td><td>${o.m?rs2(o.c/o.m):'–'}</td></tr>`;
+  const r2=x=>x==null?null:Math.round(x*100)/100, pc=x=>M?+(x/M*100).toFixed(1):null, pmx=(c,m)=>m?r2(c/m):null;
+  const sx=sel.map(i=>[PFF[i][2],PFF[i][0].split('-')[1],T.p[i],pc(T.p[i]),M?+((PFF[i][2]==='BLDC'?DB.m:DP.m)/M*100).toFixed(1):null,r2(T.fc[i]),pmx(T.fc[i],T.p[i])]);
+  if(isAll||D==='BLDC') sx.push(['BLDC total','',DB.m,pc(DB.m),null,r2(DB.c),pmx(DB.c,DB.m)]);
+  if(isAll||D==='PSC') sx.push(['PSC total','',DP.m,pc(DP.m),null,r2(DP.c),pmx(DP.c,DP.m)]);
+  if(isAll) sx.push(['Total (allocated)','',M,100,null,r2(AL),pmx(AL,M)],['Unallocated (days with no production)','',null,null,null,r2(T.un),null],['Total P&F cost · all-in per motor','',null,null,null,r2(T.cost),pmx(T.cost,M)]);
+  PFS={head:['Dept','Frame','Production (Nos.)','% share of total','Dept-wise share (%)','Cost of share (₹)','P&F cost / motor (₹)'],body:sx,from:days[0].date,to:days[days.length-1].date};
+  $('pfSum').innerHTML='<thead><tr><th>Dept</th><th>Frame</th><th>Production (Nos.)</th><th>% share of total</th><th>Dept-wise share</th><th>Cost of share (₹)</th><th>P&amp;F cost / motor (₹)</th></tr></thead><tbody>'+
+    sel.map(i=>{ const f=PFF[i]; return `<tr><td>${f[2]}</td><td>${dot(i)}${f[0].split('-')[1]}</td><td>${n0(T.p[i])}</td><td>${M?(T.p[i]/M*100).toFixed(1)+'%':'–'}</td><td>${M&&(f[2]==='BLDC'?DB.m:DP.m)?((f[2]==='BLDC'?DB.m:DP.m)/M*100).toFixed(1)+'%':'–'}</td><td>${rs0(T.fc[i])}</td><td><b>${T.p[i]?rs2(T.fc[i]/T.p[i]):'–'}</b></td></tr>`; }).join('')+
+    ((isAll||D==='BLDC')?depTot('BLDC',DB):'')+((isAll||D==='PSC')?depTot('PSC',DP):'')+
+    (isAll?`<tr class="pft"><td colspan="2">Total (allocated)</td><td>${n0(M)}</td><td>100%</td><td></td><td>${rs0(AL)}</td><td>${M?rs2(AL/M):'–'}</td></tr><tr><td colspan="5">Unallocated (days with no production)</td><td>${rs0(T.un)}</td><td></td></tr><tr class="pft"><td colspan="5">Total P&amp;F cost · all-in per motor</td><td>${rs0(T.cost)}</td><td>${M?rs2(T.cost/M):'–'}</td></tr>`:'')+'</tbody>';
+  /* Daily allocation table + Excel export data */
+  const fn=sel.map(i=>PFF[i][0]);
+  const head=['Date','Total P&F cost (₹)',...fn.map(n=>n+' (Nos.)'),isAll?'Total motors':D+' motors',isAll?'Allocated (₹)':D+' allocated (₹)',...(isAll?['Unallocated (₹)']:[]),'₹ / motor'];
+  const body=days.map(d=>{ const sm=sMot(d), al=isAll?(d.t?d.cost:0):sCost(d); return {d,sm,al,x:[d.date,Math.round(d.cost*100)/100,...sel.map(i=>d.p[i]),sm,Math.round(al*100)/100,...(isAll?[Math.round(d.un*100)/100]:[]),sm?+(al/sm).toFixed(2):null]}; });
+  const foot=['Total',Math.round(T.cost*100)/100,...sel.map(i=>T.p[i]),SM,Math.round((isAll?AL:SC)*100)/100,...(isAll?[Math.round(T.un*100)/100]:[]),SM?+((isAll?AL:SC)/SM).toFixed(2):null];
+  PFX={head,body:body.map(r=>r.x),foot,from:days[0].date,to:days[days.length-1].date};
+  $('pfDay').innerHTML='<thead><tr><th>Date</th><th>Total P&amp;F cost</th>'+sel.map(i=>`<th>${dot(i)}${PFF[i][0]}</th>`).join('')+`<th>${isAll?'Total motors':D+' motors'}</th><th>${isAll?'Allocated':D+' allocated'}</th>`+(isAll?'<th>Unallocated</th>':'')+'<th>₹ / motor</th></tr></thead><tbody>'+
+    body.map(({d,sm,al})=>`<tr><td>${dl(d.date)}</td><td>${rs0(d.cost)}</td>${sel.map(i=>`<td>${d.p[i]?n0(d.p[i]):'–'}</td>`).join('')}<td>${sm?n0(sm):'–'}</td><td>${sm?rs0(al):'–'}</td>${isAll?`<td>${d.un?rs0(d.un):'–'}</td>`:''}<td><b>${sm?rs2(al/sm):'–'}</b></td></tr>`).join('')+
+    `</tbody><tfoot><tr><td>Total</td><td>${rs0(T.cost)}</td>${sel.map(i=>`<td>${n0(T.p[i])}</td>`).join('')}<td>${n0(SM)}</td><td>${rs0(isAll?AL:SC)}</td>${isAll?`<td>${rs0(T.un)}</td>`:''}<td>${SM?rs2((isAll?AL:SC)/SM):'–'}</td></tr></tfoot>`;
+}
+$('pfDept').addEventListener('change',()=>{ S.dept=$('pfDept').value; renderCons(); });
+function pfExport(aoa,name,sheet){
+  if(window.XLSX){
+    const ws=XLSX.utils.aoa_to_sheet(aoa); ws['!cols']=aoa[0].map((h,k)=>({wch:k?Math.max(14,String(h).length+2):14}));
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,sheet); XLSX.writeFile(wb,name+'.xlsx');
+  } else {
+    const csv='\ufeff'+aoa.map(r=>r.map(v=>v==null?'':/[",\n]/.test(v)?'"'+String(v).replace(/"/g,'""')+'"':v).join(',')).join('\r\n');
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=name+'.csv'; document.body.appendChild(a); a.click(); a.remove();
+  }
+}
+const pfTag=()=>S.dept==='all'?'All':S.dept;
+$('pfXls').addEventListener('click',()=>{ if(PFX) pfExport([PFX.head,...PFX.body,PFX.foot],'PF_Daily_Allocation_'+pfTag()+'_'+PFX.from+'_to_'+PFX.to,'Daily allocation'); });
+$('pfSumXls').addEventListener('click',()=>{ if(PFS) pfExport([PFS.head,...PFS.body],'PF_Frame_Summary_'+pfTag()+'_'+PFS.from+'_to_'+PFS.to,'Frame summary'); });
+function setTab(t){ document.body.classList.toggle('tab-cons',t==='cons'); $('tabCost').setAttribute('aria-selected',String(t==='cost')); $('tabCons').setAttribute('aria-selected',String(t==='cons')); $('hTitle').textContent=t==='cons'?'Power & Fuel cost overview':'Cost overview'; render(); }
+document.querySelectorAll('.sn').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+const DATES=DATA.days.map(d=>d.date);
+function isoWeek(ds){ const d=new Date(ds+'T00:00:00'); d.setDate(d.getDate()+4-(d.getDay()||7)); const y0=new Date(d.getFullYear(),0,1); return d.getFullYear()+'-W'+String(Math.ceil((((d-y0)/864e5)+1)/7)).padStart(2,'0'); }
+const fmtM=k=>{ const [y,m]=k.split('-'); return new Date(+y,+m-1,1).toLocaleDateString('en-GB',{month:'short',year:'numeric'}); };
+function grp(f){ const m=new Map(); DATES.forEach(d=>{ const k=f(d); if(!m.has(k)) m.set(k,[]); m.get(k).push(d); }); return [...m].map(([k,a])=>({k,a})); }
+const GL={d:DATES.map(d=>({k:d,a:[d]})),w:grp(isoWeek),m:grp(d=>d.slice(0,7))};
+const GLAB={d:g=>dl(g.k),w:g=>g.k,m:g=>fmtM(g.k)}, GNAME={d:'Date',w:'Week range',m:'Month range'}, GALL={d:'All dates',w:'All weeks',m:'All months'};
+function syncRg(){
+  const v=S.view, L=GL[v], n=L.length, f=GLAB[v];
+  document.querySelectorAll('#granPills button').forEach(b=>b.classList.toggle('on',b.dataset.g===v));
+  const a=Math.max(0,L.findIndex(g=>g.a.includes(S.from))), b=Math.max(a,L.findIndex(g=>g.a.includes(S.to))), full=a===0&&b===n-1;
+  $('rgLab').textContent=GNAME[v];
+  const sel=$('rgSel');
+  sel.innerHTML='<option value="all">'+GALL[v]+'</option><option value="c" hidden>Custom range</option>'+L.map((g,i)=>`<option value="${i}">${f(g)}${v==='w'?' · '+dl(g.a[0])+(g.a.length>1?' – '+dl(g.a[g.a.length-1]):''):''}</option>`).join('');
+  sel.value=full?'all':(a===b?String(a):'c');
+  ['rMin','rMax'].forEach(id=>{ $(id).min=0; $(id).max=n-1; });
+  $('rMin').value=a; $('rMax').value=b;
+  $('rgVal').textContent=(full&&v!=='d')?'All':(a===b?f(L[a]):f(L[a])+' – '+f(L[b]));
+  const pc=x=>n>1?x/(n-1)*100:0; $('rFill').style.left=pc(a)+'%'; $('rFill').style.width=(pc(b)-pc(a))+'%';
+  $('dayNav').hidden=v!=='d';
+}
+function applyRg(a,b){ const L=GL[S.view]; if(a>b){const t=a;a=b;b=t;} setRange(L[a].a[0],L[b].a[L[b].a.length-1]); }
+document.querySelectorAll('#granPills button').forEach(bt=>bt.addEventListener('click',()=>{ S.view=bt.dataset.g; $('viewBy').value=S.view; setRange(DATES[0],DATES[DATES.length-1]); }));
+$('rgSel').addEventListener('change',()=>{ const v=$('rgSel').value, n=GL[S.view].length; if(v==='all') applyRg(0,n-1); else if(v!=='c') applyRg(+v,+v); });
+['rMin','rMax'].forEach(id=>$(id).addEventListener('input',()=>applyRg(+$('rMin').value,+$('rMax').value)));
+$('prevD').addEventListener('click',()=>{ const i=DATES.indexOf(S.from); if(i>0) setRange(DATES[i-1],DATES[i-1]); });
+$('nextD').addEventListener('click',()=>{ const i=DATES.indexOf(S.to); if(i<DATES.length-1) setRange(DATES[i+1],DATES[i+1]); });
+fillDates(); syncControls(); render(); themeIcon();
+</script>
+
+</body></html>
