@@ -256,7 +256,7 @@ body.sbhide .side{display:none}.sbhide .app{grid-template-columns:minmax(0,1fr)}
 .side{top:calc(var(--hh) + env(safe-area-inset-top,0px));height:calc(100vh - var(--hh) - env(safe-area-inset-top,0px))}
 @media(max-width:520px){.hdr .brand span{display:none}.hbtn{padding:8px 10px}}
 @media(max-width:900px){.app{grid-template-columns:minmax(0,1fr)}.side{position:fixed;left:0;top:0;z-index:80;width:288px;max-width:88vw;box-shadow:8px 0 40px rgba(0,0,0,.55)}.sbhide #sbShow{top:calc(10px + env(safe-area-inset-top,0px))}}
-body.present .main{padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px));max-width:1700px;margin:0 auto;width:100%}
+bodybody.present .main{padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px));max-width:1700px;margin:0 auto;width:100%}
 
 @media (max-width:1100px){.c8,.c4,.c7,.c5,.c6{grid-column:span 12}.hero{grid-column:span 7}.donutc{grid-column:span 5}.kstack{grid-column:span 12;flex-direction:row}.kstack>.mini{flex:1}}
 @media (max-width:900px){
@@ -303,7 +303,7 @@ tr.pft td{font-weight:700;background:var(--tile)}
 .xlsb{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;border:1px solid color-mix(in srgb,#21a366 55%,transparent);background:color-mix(in srgb,#21a366 14%,transparent);color:#2fcf84;cursor:pointer;flex:none;margin-left:auto;padding:0}
 .xlsb:hover{background:color-mix(in srgb,#21a366 28%,transparent);box-shadow:0 0 14px -5px #21a366}
 .xlsb svg{width:17px;height:17px}
-.fg.pfonly{display:none}.tab-cons .fg.pfonly{display:flex}.tab-cons .fg.costonly{display:none}
+.fg.pfonly{display:none}.tab-cons .fg.pfonly{display:flex}
 </style>
 
 <header class="hdr"><button class="hbtn" id="sbToggle" type="button" aria-expanded="true" aria-controls="sidebar" title="Show / hide filters" aria-label="Show or hide filters">☰</button><span class="hlogo"><img alt="PICL" src="data:image/png;base64,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"></span><div class="htitle"><span class="status"><i></i>Nov 2026 · source workbook</span><h1 id="hTitle">Cost overview</h1></div></header>
@@ -328,17 +328,17 @@ tr.pft td{font-weight:700;background:var(--tile)}
       <div class="fg"><label for="to">To</label><select id="to"></select></div>
     </div>
     <div class="fg pfonly"><label for="pfDept">Department (P&amp;F)</label><select id="pfDept" aria-label="Department filter"><option value="all">All departments</option><option value="PSC">PSC</option><option value="BLDC">BLDC</option></select></div>
-    <div class="fg costonly"><span class="lab" id="frameLab">Frame</span>
+    <div class="fg"><span class="lab" id="frameLab">Frame</span>
       <details class="dd" id="frameDD"><summary id="frameSum" aria-labelledby="frameLab frameSum">All frames</summary><div class="menu" id="frameMenu"></div></details></div>
-    <div class="fg costonly"><label for="metric">Cost view</label>
+    <div class="fg"><label for="metric">Cost view</label>
       <select id="metric"><option value="total">Total manufacturing cost</option><option value="labour">Total labour cost</option><option value="prod">Production cost (Wdg + Assy + Shell)</option><option value="sup">Support cost</option><option value="wdg">Winding cost</option><option value="asy">Assembly cost</option><option value="shl">Shell cost</option></select></div>
-    <div class="fg costonly"><label for="daysSel">Days</label><select id="daysSel"><option value="prod">Production days only</option><option value="all">All days</option></select><span class="lab" style="font-size:11px;opacity:.8">Shows or hides idle days in the trend, production, heat map, table and mini charts. Averages stay motor-weighted.</span></div>
+    <div class="fg"><label for="daysSel">Days</label><select id="daysSel"><option value="prod">Production days only</option><option value="all">All days</option></select></div>
     <div class="fg"><label for="labelSel">Data labels</label><select id="labelSel"><option value="smart">Smart (key points)</option><option value="all">All values</option><option value="off">Off</option></select></div>
   </div>
   <button class="reset" id="reset" type="button">Reset filters</button>
   <div class="sidefoot">
     <div class="ibtns"><button class="ibtn" id="present" type="button" title="Full screen presentation" aria-label="Full screen presentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button class="ibtn on" id="themeBtn" type="button" title="Switch light / dark" aria-label="Switch light or dark theme">🌙</button></div>
-    <div>Source: master workbook, built 20 Nov 2026 11:50. Labour ₹115 per man-hour (BLDC ₹88), P&amp;F ₹5 per motor.</div>
+    <div>Source: master workbook, built 21 Nov 2026 13:26. Labour ₹115 per man-hour (BLDC ₹88), P&amp;F ₹5 per motor.</div>
   </div>
 </aside>
 
@@ -358,7 +358,7 @@ tr.pft td{font-weight:700;background:var(--tile)}
     <div class="card hero c5">
       <div class="hbrow">
         <div class="gwrap"><canvas id="cGauge"></canvas><div class="gcen"><div class="k">Avg / motor</div><div class="gnum"><small>₹</small><span id="heroNum" data-key="heroNum" data-count="0">0</span></div><div class="gcap" id="gcap"></div></div></div>
-        <div class="hside"><div class="k" id="heroK">Average total cost per motor</div><div class="sub" id="heroSub"></div></div>
+        <div class="hside"><div class="k">Average total cost per motor</div><div class="sub" id="heroSub"></div></div>
       </div>
       <div class="fh" id="heroFH"></div>
     </div>
@@ -403,7 +403,7 @@ tr.pft td{font-weight:700;background:var(--tile)}
       <div class="plot mid"><canvas id="cHrs"></canvas></div>
     </div>
     <div class="card c4">
-      <div class="ch"><div><h2 id="lbTitle">Highest &amp; lowest day</h2><p class="d" id="lbSub">Total cost per motor, selected frames and dates</p></div></div>
+      <div class="ch"><div><h2 id="lbTitle">Highest &amp; lowest day</h2><p class="d">Total cost per motor, selected frames and dates</p></div></div>
       <div class="lb" id="lb"></div>
     </div>
     <div class="card c8">
@@ -506,7 +506,7 @@ function bucketize(days){
 }
 function updateTitles(){ const u=UN[S.view];
   $('prodTitle').textContent=u[2]+' production'; $('prodSub').textContent='Motors per '+u[0]+', stacked by frame';
-  $('scSub').textContent='Each dot is one '+u[0]; $('lbTitle').textContent='Highest & lowest '+u[0]; $('lbSub').textContent=metricName[S.metric]+' per motor, selected frames and dates'; $('tblTitle').textContent=u[2]+' detail'; }
+  $('scSub').textContent='Each dot is one '+u[0]; $('lbTitle').textContent='Highest & lowest '+u[0]; $('tblTitle').textContent=u[2]+' detail'; }
 function focusKey(k){ const b=BK[k]; if(b){ S.view='d'; $('viewBy').value='d'; setRange(b[0],b[1]); } else setRange(k,k); }
 function rangeDays(){ return DATA.days.filter(d=>d.date>=S.from && d.date<=S.to); }
 function selK(max){ return [0,1,2,3,4].filter(k=>S.frames[k] && k<=max); }
@@ -521,9 +521,6 @@ function val(d,k,m){
   return null;
 }
 function prodOf(d,k){ return k<3?d.ap[k]:(k===3?d.bp:(k===4?d.chp:null)); }
-const INC={total:['wdg','asy','shl','bld','cfp','sup','pf'],labour:['wdg','asy','shl','bld','cfp','sup'],prod:['wdg','asy','shl','bld','cfp'],sup:['sup'],wdg:['wdg'],asy:['asy'],shl:['shl']};
-const metricTag={total:'Avg cost per motor',labour:'Avg labour / motor',prod:'Avg production / motor',sup:'Avg support / motor',wdg:'Avg winding / motor',asy:'Avg assembly / motor',shl:'Avg shell / motor'};
-const mv=(d,k)=>val(d,k,S.metric);
 const metricName = {total:'Total manufacturing cost',labour:'Total labour cost',prod:'Production cost',sup:'Support cost',wdg:'Winding cost',asy:'Assembly cost',shl:'Shell cost'};
 
 function mk(id,cfg){ if(charts[id]) charts[id].destroy(); charts[id]=new Chart($(id),cfg); }
@@ -547,45 +544,43 @@ function renderHeadline(days){
   const ks=selK(4);
   let ws=0,wp=0, lo=null, hi=null;
   ks.forEach(k=>days.forEach(d=>{
-    const t=mv(d,k), p=prodOf(d,k);
+    const t=d.tot[k][4], p=prodOf(d,k);
     if(t!=null&&p){ws+=t*p;wp+=p;}
     if(t!=null){
       if(!lo||t<lo.v) lo={v:t,d:d.date,f:FR[k].name};
       if(!hi||t>hi.v) hi={v:t,d:d.date,f:FR[k].name};
     }
   }));
-  const cd=days.filter(d=>ks.some(k=>mv(d,k)!=null)).length;
-  $('heroK').textContent='Average '+metricName[S.metric].toLowerCase()+' per motor';
+  const cd=days.filter(d=>ks.some(k=>d.tot[k][4]!=null)).length;
   const avg=wp?ws/wp:0, peak=hi?hi.v:1;
   $('heroNum').dataset.count=Math.round(avg); $('gcap').textContent=hi?'peak day ₹'+n0(hi.v):'';
   const gb=base();
   mk('cGauge',{type:'doughnut',data:{datasets:[{data:[avg,Math.max(peak-avg,0.0001)],borderWidth:0,borderRadius:10,
       backgroundColor:c=>{ if(c.dataIndex!==0) return 'rgba(255,255,255,0.14)'; const a=c.chart.chartArea; if(!a) return '#3ee6ff'; const g=c.chart.ctx.createLinearGradient(a.left,a.bottom,a.right,a.top); g.addColorStop(0,'#3ee6ff'); g.addColorStop(1,'#7aa8ff'); return g; }}]},
     options:{responsive:true,maintainAspectRatio:false,rotation:-135,circumference:270,cutout:'80%',layout:{padding:6},plugins:{legend:{display:false},tooltip:{enabled:false},datalabels:{display:false},glow:{on:true}},animation:{duration:700}}});
-  const idle=days.filter(d=>!ks.some(k=>prodOf(d,k))).length;
-  $('heroSub').textContent=wp?`Weighted by motors · ${cd} cost days`+(S.prodOnly?(idle?` · ${idle} idle day${idle>1?'s':''} hidden`:''):(idle?` · ${idle} idle day${idle>1?'s':''} shown`:'')):'No cost days for this selection';
-  const fh=ks.map(k=>{let a=null,z=null; days.forEach(d=>{const t=mv(d,k); if(t==null) return; if(!a||t<a.t) a={t,d:d.date}; if(!z||t>z.t) z={t,d:d.date};}); return a?{k,lo:a,hi:z}:null;}).filter(Boolean);
+  $('heroSub').textContent=wp?`Weighted by motors · ${cd} cost days`:'No cost days for this selection';
+  const fh=ks.map(k=>{let a=null,z=null; days.forEach(d=>{const t=d.tot[k][4]; if(t==null) return; if(!a||t<a.t) a={t,d:d.date}; if(!z||t>z.t) z={t,d:d.date};}); return a?{k,lo:a,hi:z}:null;}).filter(Boolean);
   $('heroFH').innerHTML=fh.length?`<div class="fhr fhh"><span>Frame</span><span>Lowest day</span><span>Highest day</span></div>`+fh.map(r=>`<div class="fhr"><span class="fn"><i class="dot" style="background:var(${FR[r.k].tok})"></i>${FR[r.k].name}</span><span class="lo"><b>${rs(r.lo.t)}</b><em>${dl(r.lo.d)}</em></span><span class="hi"><b>${rs(r.hi.t)}</b><em>${dl(r.hi.d)}</em></span></div>`).join(''):'';
-  const sd=S.prodOnly?days.filter(d=>ks.some(k=>prodOf(d,k))):days, lbl=sd.map(d=>dl(d.date));
+  const lbl=days.map(d=>dl(d.date));
     // mini KPIs
   const motors=sum(ks.map(k=>sum(days.map(d=>prodOf(d,k)))));
   const att=sum(days.map(d=>sum(Object.values(d.att))));
-  let best=null; ks.forEach(k=>{let s=0,p=0; days.forEach(d=>{const t=mv(d,k),q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}}); if(p&&(!best||s/p<best.v)) best={v:s/p,f:FR[k].name};});
+  let best=null; ks.forEach(k=>{let s=0,p=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}}); if(p&&(!best||s/p<best.v)) best={v:s/p,f:FR[k].name};});
   $('kstack').innerHTML=`
     <div class="card mini"><div><div class="k">Motors produced</div><div class="v">${motors?`<span data-key="mot" data-count="${motors}">${n0(motors)}</span>`:'–'}</div><div class="s">Assembly output</div></div><div class="spark"><canvas id="sMot"></canvas></div></div>
     <div class="card mini"><div><div class="k">Attendance man-hours</div><div class="v">${att?`<span data-key="att" data-count="${Math.round(att)}">${n0(att)}</span>`:'–'}</div><div class="s">All departments</div></div><div class="spark"><canvas id="sAtt"></canvas></div></div>
     <div class="card mini"><div><div class="k">Lowest cost frame</div><div class="v">${best?`<small>₹</small><span data-key="best" data-count="${Math.round(best.v)}">${n0(best.v)}</span>`:'–'}</div><div class="s">${best?best.f+' · per motor':'No cost days'}</div></div></div>`;
-  spark('sMot',lbl,sd.map(d=>sum(ks.map(k=>prodOf(d,k)))||null),css('--s1'),css('--s1')+'33');
-  spark('sAtt',lbl,sd.map(d=>sum(Object.values(d.att))||null),css('--s2'),css('--s2')+'33');
+  spark('sMot',lbl,days.map(d=>sum(ks.map(k=>prodOf(d,k)))||null),css('--s1'),css('--s1')+'33');
+  spark('sAtt',lbl,days.map(d=>sum(Object.values(d.att))||null),css('--s2'),css('--s2')+'33');
   // frame tiles
-  const rows=[0,1,2,3,4].filter(k=>S.frames[k]).map(k=>{let s=0,p=0,c=0; days.forEach(d=>{const t=mv(d,k),q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;c++;}}); let sp=0,ss=0,sf=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){sp+=d.tot[k][0]*q;ss+=d.tot[k][1]*q;sf+=d.tot[k][3]*q;}}); return {k,avg:p?s/p:null,p,c,m:sum(days.map(d=>prodOf(d,k))),pr:p?sp/p:null,su:p?ss/p:null,pf:p?sf/p:null};});
+  const rows=[0,1,2,3,4].filter(k=>S.frames[k]).map(k=>{let s=0,p=0,c=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;c++;}}); let sp=0,ss=0,sf=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){sp+=d.tot[k][0]*q;ss+=d.tot[k][1]*q;sf+=d.tot[k][3]*q;}}); return {k,avg:p?s/p:null,p,c,m:sum(days.map(d=>prodOf(d,k))),pr:p?sp/p:null,su:p?ss/p:null,pf:p?sf/p:null};});
   const totM=sum(rows.map(r=>r.m))||1;
   const solo=S.frames.filter(Boolean).length===1;
   $('tiles').innerHTML=rows.map(r=>{const sh=Math.round(r.m/totM*100); return `<button type="button" class="tile" data-i="${r.k}" aria-pressed="${solo&&!!S.frames[r.k]}" title="Click to focus on ${FR[r.k].name}">
-    <div class="n"><span class="dot" style="background:var(${FR[r.k].tok})"></span>${FR[r.k].name}<span class="cap">${metricTag[S.metric]}</span></div>
+    <div class="n"><span class="dot" style="background:var(${FR[r.k].tok})"></span>${FR[r.k].name}<span class="cap">Avg cost per motor</span></div>
     <div class="a">${r.avg!=null?rs(r.avg):'–'}</div>
     <div class="m">${r.p?r.c+' cost days · '+n0(r.m)+' motors made':'no cost days'}</div>
-    ${r.p&&S.metric==='total'?`<div class="split"><span><i>Production</i><b>${rs(r.pr)}</b></span><span><i>Support</i><b>${rs(r.su)}</b></span><span><i>P&amp;F</i><b>${rs(r.pf)}</b></span></div>`:''}
+    ${r.p?`<div class="split"><span><i>Production</i><b>${rs(r.pr)}</b></span><span><i>Support</i><b>${rs(r.su)}</b></span><span><i>P&amp;F</i><b>${rs(r.pf)}</b></span></div>`:''}
     <div class="sharel"><span>Share of motors</span><b>${sh}%</b></div>
     <div class="share" title="Share of selected motors"><i style="width:${sh}%;background:var(${FR[r.k].tok})"></i></div></button>`;}).join('');
   const items=rows.map(r=>`<span class="ti"><i class="dot" style="background:var(${FR[r.k].tok})"></i>${FR[r.k].name}<b>${r.avg!=null?rs(r.avg):'–'}</b><em>${n0(r.m)} motors</em></span>`);
@@ -602,10 +597,10 @@ function renderHeadline(days){
 /* ---------- Cost parts (shared by donut, build-up, insights) ---------- */
 function costParts(days){
   const ks=selK(4), acc={wdg:0,asy:0,shl:0,bld:0,cfp:0,sup:0,pf:0}; let P=0;
-  ks.forEach(k=>days.forEach(d=>{ const t=d.tot[k][4], p=prodOf(d,k); if(t==null||!p||mv(d,k)==null) return; P+=p;
+  ks.forEach(k=>days.forEach(d=>{ const t=d.tot[k][4], p=prodOf(d,k); if(t==null||!p) return; P+=p;
     if(k<3){acc.wdg+=d.wc[k]*p; acc.asy+=d.ac[k]*p;} if(k===1||k===2) acc.shl+=d.sc[k]*p; if(k===3) acc.bld+=d.bc*p; if(k===4) acc.cfp+=d.tot[4][0]*p;
     acc.sup+=d.tot[k][1]*p; acc.pf+=d.tot[k][3]*p; }));
-  const parts=[['Winding','wdg','--s1','#ffffff'],['Assembly','asy','--s2','#ffffff'],['Shell','shl','--s3','#04241a'],['BLDC production','bld','--s6','#ffffff'],['Chimney production','cfp','--s7','#ffffff'],['Support','sup','--s4','#2a1d00'],['P&F','pf','--s5','#3a0f22']].filter(p=>P&&INC[S.metric].includes(p[1])&&acc[p[1]]/P>0.005);
+  const parts=[['Winding','wdg','--s1','#ffffff'],['Assembly','asy','--s2','#ffffff'],['Shell','shl','--s3','#04241a'],['BLDC production','bld','--s6','#ffffff'],['Chimney production','cfp','--s7','#ffffff'],['Support','sup','--s4','#2a1d00'],['P&F','pf','--s5','#3a0f22']].filter(p=>P&&acc[p[1]]/P>0.005);
   const vals=parts.map(p=>acc[p[1]]/P);
   return {parts,vals,tot:sum(vals),P};
 }
@@ -633,7 +628,7 @@ function renderWater(days){
 /* ---------- Volume vs cost (scatter) ---------- */
 function renderScatter(days){
   const b=base(), ks=selK(4);
-  const sets=ks.map(k=>({k,pts:days.map(d=>{const t=mv(d,k),p=prodOf(d,k); return (t!=null&&p)?{x:p,y:t,d:d.date}:null;}).filter(Boolean)})).filter(s=>s.pts.length);
+  const sets=ks.map(k=>({k,pts:days.map(d=>{const t=d.tot[k][4],p=prodOf(d,k); return (t!=null&&p)?{x:p,y:t,d:d.date}:null;}).filter(Boolean)})).filter(s=>s.pts.length);
   showEmpty('eScat',!sets.length);
   mk('cScat',{type:'scatter',data:{datasets:sets.map(s=>({label:FR[s.k].name,data:s.pts,backgroundColor:css(FR[s.k].tok),borderColor:b.surf,borderWidth:1.5,pointRadius:5.5,pointHoverRadius:8,
       datalabels:{display:ctx=>{ if(S.labels==='off') return false; if(S.labels==='all') return true; const arr=ctx.dataset.data; return arr[ctx.dataIndex].y===Math.max(...arr.map(a=>a.y)); },align:'top',offset:4,color:b.ink,font:{size:10,weight:'600'},formatter:v=>dl(v.d)}}))},
@@ -664,13 +659,13 @@ function renderHeat(days){
 /* ---------- Insights ---------- */
 function renderInsights(days){
   const ks=selK(4), out=[];
-  const fa=ks.map(k=>{let s=0,p=0; days.forEach(d=>{const t=mv(d,k),q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}}); return p?{k,v:s/p}:null;}).filter(Boolean).sort((a,b)=>b.v-a.v);
+  const fa=ks.map(k=>{let s=0,p=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}}); return p?{k,v:s/p}:null;}).filter(Boolean).sort((a,b)=>b.v-a.v);
   if(fa.length>=2){ const a=fa[0], z=fa[fa.length-1]; out.push([FR[a.k].tok,`<b>${FR[a.k].name}</b> is the costliest at <b>${rs(a.v)}</b> per motor, ${n1(a.v/z.v)}× ${FR[z.k].name} (${rs(z.v)}).`]); }
   const cp=costParts(days);
-  if(cp.P&&cp.parts.length>1){ const i=cp.vals.indexOf(Math.max(...cp.vals)); out.push([cp.parts[i][2],`<b>${cp.parts[i][0]}</b> is the biggest cost block: ${rs(cp.vals[i])} of ${rs(cp.tot)} (${n0(cp.vals[i]/cp.tot*100)}%).`]); }
-  let pk=null; ks.forEach(k=>days.forEach(d=>{const t=mv(d,k); if(t!=null&&(!pk||t>pk.t)) pk={k,t,d:d.date};}));
+  if(cp.P){ const i=cp.vals.indexOf(Math.max(...cp.vals)); out.push([cp.parts[i][2],`<b>${cp.parts[i][0]}</b> is the biggest cost block: ${rs(cp.vals[i])} of ${rs(cp.tot)} (${n0(cp.vals[i]/cp.tot*100)}%).`]); }
+  let pk=null; ks.forEach(k=>days.forEach(d=>{const t=d.tot[k][4]; if(t!=null&&(!pk||t>pk.t)) pk={k,t,d:d.date};}));
   if(pk){ const av=fa.find(x=>x.k===pk.k); if(av&&av.v>0) out.push([FR[pk.k].tok,`<b>${FR[pk.k].name}</b> peaked on <b>${dl(pk.d)}</b> at ${rs(pk.t)}, ${n0((pk.t/av.v-1)*100)}% above its own average.`]); }
-  const pts=days.map(d=>{let s=0,p=0,m=0; ks.forEach(k=>{const t=mv(d,k),q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;m+=q;}}); return p?{m,c:s/p}:null;}).filter(Boolean);
+  const pts=days.map(d=>{let s=0,p=0,m=0; ks.forEach(k=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;m+=q;}}); return p?{m,c:s/p}:null;}).filter(Boolean);
   if(pts.length>=6){ const sm=pts.map(x=>x.m).sort((a,b)=>a-b), med=sm[Math.floor(sm.length/2)];
     const hi=pts.filter(x=>x.m>med), lo=pts.filter(x=>x.m<=med);
     if(hi.length&&lo.length){ const ha=sum(hi.map(x=>x.c))/hi.length, la=sum(lo.map(x=>x.c))/lo.length, df=(la-ha)/la*100;
@@ -704,13 +699,13 @@ function renderTrend(days){
 function renderComp(days){
   const b=base(), ks=selK(4), rows=[];
   ks.forEach(k=>{
-    const ok=days.filter(d=>d.tot[k][4]!=null&&mv(d,k)!=null); if(!ok.length) return;
+    const ok=days.filter(d=>d.tot[k][4]!=null); if(!ok.length) return;
     const pw=sum(ok.map(d=>prodOf(d,k))), av=f=>sum(ok.map(d=>f(d)*prodOf(d,k)))/pw;
-    rows.push({name:FR[k].name,wdg:k<3?av(d=>d.wc[k]):0,asy:k<3?av(d=>d.ac[k]):0,shl:(k===1||k===2)?av(d=>d.sc[k]):0,bld:k===3?av(d=>d.bc):0,cfp:k===4?av(d=>d.tot[k][0]):0,sup:av(d=>d.tot[k][1]),pf:av(d=>d.tot[k][3]),tot:av(d=>mv(d,k)),n:ok.length});
+    rows.push({name:FR[k].name,wdg:k<3?av(d=>d.wc[k]):0,asy:k<3?av(d=>d.ac[k]):0,shl:(k===1||k===2)?av(d=>d.sc[k]):0,bld:k===3?av(d=>d.bc):0,cfp:k===4?av(d=>d.tot[k][0]):0,sup:av(d=>d.tot[k][1]),pf:av(d=>d.tot[k][3]),tot:av(d=>d.tot[k][4]),n:ok.length});
   });
   showEmpty('eComp',!rows.length);
   const parts=[['Winding','wdg','--s1'],['Assembly','asy','--s2'],['Shell','shl','--s3'],['BLDC production','bld','--s6'],['Chimney production','cfp','--s7'],['Support','sup','--s4'],['P&F','pf','--s5']];
-  const ds=parts.filter(p=>INC[S.metric].includes(p[1])&&rows.some(r=>r[p[1]]>0)).map(p=>({label:p[0],data:rows.map(r=>r[p[1]]),backgroundColor:css(p[2]),borderColor:b.surf,borderWidth:2,borderRadius:3,
+  const ds=parts.filter(p=>rows.some(r=>r[p[1]]>0)).map(p=>({label:p[0],data:rows.map(r=>r[p[1]]),backgroundColor:css(p[2]),borderColor:b.surf,borderWidth:2,borderRadius:3,
     datalabels:{display:ctx=>S.labels!=='off'&&ctx.dataset.data[ctx.dataIndex]>=(S.labels==='all'?1:12),color:css('--onseg'),font:{size:10.5,weight:'600'},formatter:v=>n0(v)}}));
   ds.push({label:'Total',data:rows.map(()=>0),backgroundColor:'transparent',borderWidth:0,datalabels:{display:()=>S.labels!=='off',anchor:'end',align:'end',offset:2,color:b.ink,font:{size:12,weight:'700'},formatter:(v,ctx)=>'₹'+n0(rows[ctx.dataIndex].tot)}});
   mk('cComp',{type:'bar',data:{labels:rows.map(r=>r.name),datasets:ds},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
@@ -773,7 +768,7 @@ function renderTimeline(days){
   $('tlbars').innerHTML=all.map((d,i)=>{ const on=d.date>=S.from&&d.date<=S.to, h=vals[i]?Math.max(6,Math.round(vals[i]/mx*62)):3;
     const bv=S.labels==='off'||!vals[i]?'':(S.labels==='all'||i===top)?`<span class="bv">${(vals[i]/1000).toFixed(1)}k</span>`:'';
     return `<button type="button" class="tb${on?' on':''}${vals[i]?'':' z'}" data-d="${d.date}" title="${dl(d.date)} · ${dow(d.date)}: ${n0(vals[i])} motors">${bv}<i style="height:${h}px"></i><span class="bd">${+d.date.slice(8)}</span></button>`; }).join('');
-  let s=0,p=0,m=0; days.forEach(d=>ks.forEach(k=>{const t=mv(d,k),q=prodOf(d,k); if(q) m+=q; if(t!=null&&q){s+=t*q;p+=q;}}));
+  let s=0,p=0,m=0; days.forEach(d=>ks.forEach(k=>{const t=d.tot[k][4],q=prodOf(d,k); if(q) m+=q; if(t!=null&&q){s+=t*q;p+=q;}}));
   const one=S.from===S.to;
   $('tlInfo').innerHTML=one?`<b>${dow(S.from)} ${dl(S.from)}</b> · ${n0(m)} motors${p?' · avg <b>'+rs(s/p)+'</b> per motor':' · no cost (no production)'}`:`<b>${dl(S.from)} – ${dl(S.to)}</b> · ${days.length} days · ${n0(m)} motors${p?' · avg <b>'+rs(s/p)+'</b> per motor':''}`;
 }
@@ -781,7 +776,7 @@ function renderTimeline(days){
 /* ---------- Costliest days ---------- */
 function renderLeader(days){
   const ks=selK(4), items=[];
-  ks.forEach(k=>days.forEach(d=>{const t=mv(d,k); if(t!=null) items.push({k,d:d.date,t});}));
+  ks.forEach(k=>days.forEach(d=>{const t=d.tot[k][4]; if(t!=null) items.push({k,d:d.date,t});}));
   if(!items.length){ $('lb').innerHTML='<div style="color:var(--muted)">No cost days for this selection.</div>'; return; }
   items.sort((a,b)=>b.t-a.t);
   const hi=items[0], lo=items[items.length-1], rows=[['Highest',hi,'--bad']]; if(items.length>1) rows.push(['Lowest',lo,'--good']);
@@ -793,13 +788,13 @@ function renderLeader(days){
 function renderTable(days){
   const ks=selK(4); let ds=days; if(S.prodOnly) ds=days.filter(d=>ks.some(k=>d.tot[k][4]!=null||prodOf(d,k)));
   if(!ks.length||!ds.length){ $('tbl').innerHTML='<tbody><tr><td style="text-align:left;color:var(--muted)">No rows for this selection.</td></tr></tbody>'; return; }
-  const range=ks.map(k=>{const v=ds.map(d=>mv(d,k)).filter(x=>x!=null);return v.length?[Math.min(...v),Math.max(...v)]:[0,1];});
+  const range=ks.map(k=>{const v=ds.map(d=>d.tot[k][4]).filter(x=>x!=null);return v.length?[Math.min(...v),Math.max(...v)]:[0,1];});
   let h='<thead><tr><th>'+(S.view==='d'?'Date':UN[S.view][1])+'</th><th>'+(S.view==='d'?'Day':'Days')+'</th>'+ks.map(k=>`<th>${FR[k].name} motors</th><th>${FR[k].name} ₹/motor</th>`).join('')+'</tr></thead><tbody>';
   ds.forEach(d=>{ h+=`<tr><td>${dl(d.date)}</td><td style="text-align:right;color:var(--muted)">${dow(d.date)}</td>`+ks.map((k,i)=>{
-    const t=mv(d,k), p=prodOf(d,k); const r=range[i]; const pct=t==null?0:Math.round(((t-r[0])/((r[1]-r[0])||1))*40);
+    const t=d.tot[k][4], p=prodOf(d,k); const r=range[i]; const pct=t==null?0:Math.round(((t-r[0])/((r[1]-r[0])||1))*40);
     return `<td>${p?n0(p):'–'}</td><td style="background:color-mix(in srgb,var(${FR[k].tok}) ${pct}%,transparent)">${t==null?'–':n1(t)}</td>`;}).join('')+'</tr>'; });
   h+='</tbody><tfoot><tr><td>Total / avg</td><td></td>'+ks.map(k=>{
-    let s=0,p=0; ds.forEach(d=>{const t=mv(d,k),q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}});
+    let s=0,p=0; ds.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}});
     return `<td>${n0(sum(ds.map(d=>prodOf(d,k))))}</td><td>${p?n1(s/p):'–'}</td>`;}).join('')+'</tr></tfoot>';
   $('tbl').innerHTML=h;
 }
@@ -886,7 +881,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render(
 function sbSet(h){ document.body.classList.toggle('sbhide',h); $('sbToggle').setAttribute('aria-expanded',String(!h)); setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),60); }
 $('sbToggle').addEventListener('click',()=>sbSet(!document.body.classList.contains('sbhide')));
 if(matchMedia('(max-width:900px)').matches) sbSet(true);
-const CONS={days:[{"date":"2026-10-01","cost":5756.4,"p":[0,0,0,0,0]},{"date":"2026-10-02","cost":36643.16,"p":[0,0,0,0,0]},{"date":"2026-10-03","cost":13031.28,"p":[0,0,0,0,0]},{"date":"2026-10-04","cost":27758.52,"p":[0,0,0,0,0]},{"date":"2026-10-05","cost":104218.65,"p":[721,0,1958,495,690]},{"date":"2026-10-06","cost":97102.8,"p":[213,0,1464,587,316]},{"date":"2026-10-07","cost":96789.71,"p":[0,0,2293,531,810]},{"date":"2026-10-08","cost":103933.64,"p":[977,0,2544,801,900]},{"date":"2026-10-09","cost":103714.65,"p":[995,0,3320,810,1022]},{"date":"2026-10-10","cost":105853.95,"p":[1163,0,2819,756,1843]},{"date":"2026-10-11","cost":23931,"p":[0,0,0,0,0]},{"date":"2026-10-12","cost":100112.33,"p":[689,766,3621,1374,2421]},{"date":"2026-10-13","cost":102283.27,"p":[1000,752,3349,1116,2455]},{"date":"2026-10-14","cost":111699.86,"p":[0,1550,2559,1019,1823]},{"date":"2026-10-15","cost":114961.73,"p":[575,1000,2656,1428,1923]},{"date":"2026-10-16","cost":91670.51,"p":[2147,0,3542,1145,1510]},{"date":"2026-10-17","cost":89457.75,"p":[603,800,3818,1309,1232]},{"date":"2026-10-18","cost":12060,"p":[0,0,0,0,0]},{"date":"2026-10-19","cost":85414.84,"p":[1026,476,3185,1140,1543]},{"date":"2026-10-20","cost":11123.91,"p":[0,0,0,0,0]},{"date":"2026-10-21","cost":120793.95,"p":[485,0,3811,1172,1898]},{"date":"2026-10-22","cost":132016.84,"p":[0,0,3557,1359,1916]},{"date":"2026-10-23","cost":169309.01,"p":[0,221,1862,1297,1617]},{"date":"2026-10-24","cost":64655.89,"p":[801,147,3672,1444,1900]},{"date":"2026-10-25","cost":11883.04,"p":[0,0,0,0,0]},{"date":"2026-10-26","cost":104986.57,"p":[925,1088,5095,1604,2188]},{"date":"2026-10-27","cost":105286.73,"p":[0,1866,4497,1828,2157]},{"date":"2026-10-28","cost":105979.39,"p":[774,768,4679,2435,910]},{"date":"2026-10-29","cost":99806.18,"p":[1956,0,4724,1793,917]},{"date":"2026-10-30","cost":88753.5,"p":[1015,4,4495,1480,1842]},{"date":"2026-10-31","cost":112343.18,"p":[930,0,3851,972,2724]},{"date":"2026-11-01","cost":15839.1,"p":[0,0,0,0,0]},{"date":"2026-11-02","cost":98988.02,"p":[0,0,3185,1125,1960]},{"date":"2026-11-03","cost":115829.34,"p":[1165,0,3519,901,3210]},{"date":"2026-11-04","cost":113441.21,"p":[2444,0,3366,928,2395]},{"date":"2026-11-05","cost":115984.26,"p":[1669,452,4880,1154,3686]},{"date":"2026-11-06","cost":134434.18,"p":[1659,49,3538,1124,3721]},{"date":"2026-11-07","cost":77400.06,"p":[834,0,2058,812,2202]},{"date":"2026-11-08","cost":14580,"p":[0,0,0,0,0]},{"date":"2026-11-09","cost":14400,"p":[0,0,0,0,0]},{"date":"2026-11-10","cost":17816.4,"p":[0,0,0,0,0]},{"date":"2026-11-11","cost":11520,"p":[0,0,0,0,0]},{"date":"2026-11-12","cost":103620.23,"p":[1151,0,2498,870,2837]},{"date":"2026-11-13","cost":108587.55,"p":[543,0,3633,910,2845]},{"date":"2026-11-14","cost":100440.09,"p":[20,504,0,0,0]},{"date":"2026-11-15","cost":11160,"p":[0,0,0,0,0]},{"date":"2026-11-16","cost":102708.68,"p":[70,832,3278,1338,2456]},{"date":"2026-11-17","cost":102406.29,"p":[1110,303,3637,1426,3133]}]}; /* {date, cost: total P&F cost of the day (Rs), p:[BLDC-IDU, BLDC-ODU, PSC-C, PSC-H, PSC-E] motors} */
+const CONS={days:[{"date":"2026-10-01","cost":5756.4,"p":[0,0,0,0,0]},{"date":"2026-10-02","cost":36643.16,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":36643.16},{"date":"2026-10-03","cost":13031.28,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":13031.28},{"date":"2026-10-04","cost":27758.52,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":27758.52},{"date":"2026-10-05","cost":104218.65,"p":[721,0,1958,495,690],"fc":[8437.34,0.0,9457.87,12042.95,11084.84],"un":63195.65},{"date":"2026-10-06","cost":97102.8,"p":[213,0,1464,587,316],"fc":[5493.38,0.0,10243.38,14932.74,10192.32],"un":56240.97},{"date":"2026-10-07","cost":96789.71,"p":[0,0,2293,531,810],"fc":[7095.72,0.0,10655.68,12778.73,10517.97],"un":55741.62},{"date":"2026-10-08","cost":103933.64,"p":[977,0,2544,801,900],"fc":[7645.31,0.0,8612.69,14863.37,12680.02],"un":60132.25},{"date":"2026-10-09","cost":103714.65,"p":[995,0,3320,810,1022],"fc":[7012.66,0.0,8460.13,13910.83,13187.98],"un":61143.05},{"date":"2026-10-10","cost":105853.95,"p":[1163,0,2819,756,1843],"fc":[8014.06,0.0,8775.94,13968.16,15864.44],"un":59231.35},{"date":"2026-10-11","cost":23931,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":23931.0},{"date":"2026-10-12","cost":100112.33,"p":[689,766,3621,1374,2421],"fc":[5425.43,4668.39,7459.78,9730.25,14106.15],"un":58722.32},{"date":"2026-10-13","cost":102283.27,"p":[1000,752,3349,1116,2455],"fc":[5342.53,5084.02,7798.26,12617.28,15141.86],"un":56299.32},{"date":"2026-10-14","cost":111699.86,"p":[0,1550,2559,1019,1823],"fc":[3341.87,7677.27,8850.77,11884.41,16946.34],"un":62999.2},{"date":"2026-10-15","cost":114961.73,"p":[575,1000,2656,1428,1923],"fc":[5706.49,6532.68,10638.23,14625.99,15036.66],"un":62421.67},{"date":"2026-10-16","cost":91670.51,"p":[2147,0,3542,1145,1510],"fc":[8103.96,2695.29,7303.95,10322.49,12403.06],"un":50841.75},{"date":"2026-10-17","cost":89457.75,"p":[603,800,3818,1309,1232],"fc":[4771.94,3153.63,9417.71,10554.78,11726.1],"un":49833.6},{"date":"2026-10-18","cost":12060,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":12060.0},{"date":"2026-10-19","cost":85414.84,"p":[1026,476,3185,1140,1543],"fc":[3041.51,4478.7,5911.62,11036.69,11288.3],"un":49658.02},{"date":"2026-10-20","cost":11123.91,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":11123.91},{"date":"2026-10-21","cost":120793.95,"p":[485,0,3811,1172,1898],"fc":[3583.43,7166.87,9275.28,15755.22,16866.0],"un":68147.14},{"date":"2026-10-22","cost":132016.84,"p":[0,0,3557,1359,1916],"fc":[0.0,0.0,15035.53,20055.31,14599.38],"un":82326.62},{"date":"2026-10-23","cost":169309.01,"p":[0,221,1862,1297,1617],"fc":[0.0,14135.98,20504.47,28942.1,20219.5],"un":85506.96},{"date":"2026-10-24","cost":64655.89,"p":[801,147,3672,1444,1900],"fc":[3510.09,2314.06,6759.52,10391.57,7077.69],"un":34602.97},{"date":"2026-10-25","cost":11883.04,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":11883.04},{"date":"2026-10-26","cost":104986.57,"p":[925,1088,5095,1604,2188],"fc":[5605.15,3753.45,10240.6,14788.4,10741.13],"un":59857.85},{"date":"2026-10-27","cost":105286.73,"p":[0,1866,4497,1828,2157],"fc":[3182.51,6365.01,12037.66,16357.57,11572.06],"un":55771.91},{"date":"2026-10-28","cost":105979.39,"p":[774,768,4679,2435,910],"fc":[7486.13,1809.83,9589.32,18559.33,8741.05],"un":59793.72},{"date":"2026-10-29","cost":99806.18,"p":[1956,0,4724,1793,917],"fc":[9295.51,46.06,9675.57,14671.46,10015.22],"un":56102.36},{"date":"2026-10-30","cost":88753.5,"p":[1015,4,4495,1480,1842],"fc":[9216.88,0.0,8326.25,11800.05,13285.65],"un":46124.67},{"date":"2026-10-31","cost":112343.18,"p":[930,0,3851,972,2724],"fc":[10904.08,0.0,8110.58,9674.79,16900.34],"un":66753.38},{"date":"2026-11-01","cost":15839.1,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":15839.1},{"date":"2026-11-02","cost":98988.02,"p":[0,0,3185,1125,1960],"fc":[0.0,0.0,9747.21,12726.63,17870.36],"un":58643.82},{"date":"2026-11-03","cost":115829.34,"p":[1165,0,3519,901,3210],"fc":[11974.99,0.0,9159.25,11592.45,22751.78],"un":60350.87},{"date":"2026-11-04","cost":113441.21,"p":[2444,0,3366,928,2395],"fc":[12104.67,0.0,8137.77,13961.39,20668.89],"un":58568.5},{"date":"2026-11-05","cost":115984.26,"p":[1669,452,4880,1154,3686],"fc":[11009.88,846.91,8904.15,14154.07,23060.45],"un":58008.79},{"date":"2026-11-06","cost":134434.18,"p":[1659,49,3538,1124,3721],"fc":[10573.69,4107.14,9537.57,15240.16,24764.91],"un":70210.72},{"date":"2026-11-07","cost":77400.06,"p":[834,0,2058,812,2202],"fc":[4494.37,2226.57,6043.47,9924.17,14367.07],"un":40344.41},{"date":"2026-11-08","cost":14580,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":14580.0},{"date":"2026-11-09","cost":14400,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":14400.0},{"date":"2026-11-10","cost":17816.4,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":17816.4},{"date":"2026-11-11","cost":11520,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":11520.0},{"date":"2026-11-12","cost":103620.23,"p":[1151,0,2498,870,2837],"fc":[8783.44,1895.71,10473.73,9887.69,22759.65],"un":49820.02},{"date":"2026-11-13","cost":108587.55,"p":[543,0,3633,910,2845],"fc":[11646.98,0.0,9932.24,14714.7,19299.56],"un":52994.08},{"date":"2026-11-14","cost":100440.09,"p":[20,504,0,0,0],"fc":[8335.05,3334.02,8381.77,7497.28,12571.4],"un":60320.56},{"date":"2026-11-15","cost":11160,"p":[0,0,0,0,0],"fc":[0.0,0.0,0.0,0.0,0.0],"un":11160.0},{"date":"2026-11-16","cost":102708.68,"p":[70,832,3278,1338,2456],"fc":[7099.77,3248.26,11590.28,10495.38,19768.54],"un":50506.45},{"date":"2026-11-17","cost":102406.29,"p":[1110,303,3637,1426,3133],"fc":[11594.24,597.64,10599.24,11397.96,19504.51],"un":48712.69}]}; /* {date, cost: total P&F cost of the day (Rs), p:[BLDC-IDU, BLDC-ODU, PSC-C, PSC-H, PSC-E] motors} */
 const PFF=[['BLDC-IDU','--s2','BLDC'],['BLDC-ODU','--s4','BLDC'],['PSC-C','--s1','PSC'],['PSC-H','--s7','PSC'],['PSC-E','--s3','PSC']];
 const inr=x=>{ if(x==null||isNaN(x)) return '–'; const a=Math.abs(x); return a>=1e7?'₹'+(x/1e7).toFixed(2)+' Cr':a>=1e5?'₹'+(x/1e5).toFixed(2)+' L':'₹'+n0(x); };
 const rs0=x=>x==null?'–':'₹'+n0(x), rs2=x=>x==null?'–':'₹'+x.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -902,7 +897,7 @@ function renderCons(){
   if(!rows.length){ PFX=null; $('consEmptyTxt').textContent=CONS.days.length?'No P&F cost for the selected dates.':'No P&F cost found. Put the Maintenance Daily MIS in the Electric_Consumption folder and run the update: the column "Total P&F Cost (₹)" is read for every day.'; return; }
   const b=base(), tx=css('--muted'), col=PFF.map(f=>css(f[1]));
   const D=S.dept, isAll=D==='all', sel=PFF.map((f,i)=>(isAll||f[2]===D)?i:-1).filter(i=>i>=0), DNAME=isAll?'All':D;
-  const days=rows.map(r=>{ const t=sum(r.p), fc=r.p.map(x=>t?r.cost*x/t:0); return {date:r.date,cost:r.cost,p:r.p,t,fc,un:t?0:r.cost}; });
+  const days=rows.map(r=>{ const t=sum(r.p); if(r.fc) return {date:r.date,cost:r.cost,p:r.p,t,fc:r.fc,un:r.un||0}; const fc=r.p.map(x=>t?r.cost*x/t:0); return {date:r.date,cost:r.cost,p:r.p,t,fc,un:t?0:r.cost}; });
   const g={}; days.forEach(d=>{ const [k,l]=bkOf(d.date), o=g[k]=g[k]||{l,cost:0,un:0,fc:[0,0,0,0,0],p:[0,0,0,0,0]}; o.cost+=d.cost; o.un+=d.un; d.fc.forEach((x,i)=>{o.fc[i]+=x; o.p[i]+=d.p[i];}); });
   const L=Object.keys(g).sort().map(k=>g[k]);
   const T={cost:sum(days.map(d=>d.cost)),un:sum(days.map(d=>d.un)),fc:PFF.map((_,i)=>sum(days.map(d=>d.fc[i]))),p:PFF.map((_,i)=>sum(days.map(d=>d.p[i])))};
@@ -912,8 +907,8 @@ function renderCons(){
   const card=(k,v,s,ac)=>`<div class="card" style="--ac:${ac}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
   $('consKpis').innerHTML=(isAll?[
     card('Total P&F cost',inr(T.cost),rs0(T.cost)+' · '+days.length+' days',css('--s1')),
-    card('Allocated to frames',inr(AL),T.cost?Math.round(AL/T.cost*100)+'% of total':'',css('--s3')),
-    card('Unallocated',inr(T.un),'days with no production'+(T.cost?' · '+(T.un/T.cost*100).toFixed(1)+'%':''),css('--s4')),
+    card('Direct cost of frames',inr(AL),T.cost?Math.round(AL/T.cost*100)+'% of total':'',css('--s3')),
+    card('Shared cost (not given to frames)',inr(T.un),'Lighting, AC, Compressor, R&D'+(T.cost?' · '+(T.un/T.cost*100).toFixed(1)+'%':''),css('--s4')),
     card('Motors made',n0(M),'BLDC '+n0(DB.m)+' · PSC '+n0(DP.m),css('--s7')),
     card('All-in P&F / motor',M?rs2(T.cost/M):'–','total cost incl. unallocated ÷ motors',css('--s2')),
     card('Allocated P&F / motor',M?rs2(AL/M):'–','BLDC '+(DB.m?rs2(DB.c/DB.m):'–')+' · PSC '+(DP.m?rs2(DP.c/DP.m):'–'),css('--s5'))
@@ -923,24 +918,24 @@ function renderCons(){
     card(D+' motors made',n0(SM),sel.map(i=>PFF[i][0].split('-')[1]+' '+n0(T.p[i])).join(' · '),css('--s7')),
     card(D+' P&F / motor',SM?rs2(SC/SM):'–','allocated cost ÷ '+D+' motors',css('--s5')),
     card('Plant all-in P&F / motor',M?rs2(T.cost/M):'–','all departments, incl. unallocated',css('--s2')),
-    card('Unallocated (plant)',inr(T.un),'days with no production',css('--s4'))
+    card('Shared cost (plant)',inr(T.un),'Lighting, AC, Compressor, R&D',css('--s4'))
   ]).join('');
-  const pd=days.filter(d=>sMot(d)>0), hi=pd.slice().sort((a,c)=>c.cost/c.t-a.cost/a.t)[0], lo=pd.slice().sort((a,c)=>a.cost/a.t-c.cost/c.t)[0];
-  $('pfRec').innerHTML=(isAll?`<span>Allocated + Unallocated = Total: <b>${rs0(AL)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`:`<span>${D} + other department + Unallocated = Total: <b>${rs0(SC)} + ${rs0(AL-SC)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`)+(hi?`<span>Highest day: <b>${dl(hi.date)} · ${rs2(hi.cost/hi.t)}</b>/motor (${n0(sMot(hi))} ${isAll?'':D+' '}motors)</span><span>Lowest day: <b>${dl(lo.date)} · ${rs2(lo.cost/lo.t)}</b>/motor (${n0(sMot(lo))} ${isAll?'':D+' '}motors)</span>`:'');
+  const pd=days.filter(d=>sMot(d)>0), hi=pd.slice().sort((a,c)=>sCost(c)/sMot(c)-sCost(a)/sMot(a))[0], lo=pd.slice().sort((a,c)=>sCost(a)/sMot(a)-sCost(c)/sMot(c))[0];
+  $('pfRec').innerHTML=(isAll?`<span>Frames + Shared = Total: <b>${rs0(AL)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`:`<span>${D} + other department + Shared = Total: <b>${rs0(SC)} + ${rs0(AL-SC)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`)+(hi?`<span>Highest day: <b>${dl(hi.date)} · ${rs2(sCost(hi)/sMot(hi))}</b>/motor (${n0(sMot(hi))} ${isAll?'':D+' '}motors)</span><span>Lowest day: <b>${dl(lo.date)} · ${rs2(sCost(lo)/sMot(lo))}</b>/motor (${n0(sMot(lo))} ${isAll?'':D+' '}motors)</span>`:'');
   $('pfStackT').textContent='Where the P&F money goes'+(isAll?'':' · '+D)+' · '+UN[S.view][2].toLowerCase();
   const mix={interaction:{mode:'index',intersect:false}};
   const stk=L.map(x=>sCost(x)+(isAll?x.un:0)), mxS=Math.max(1,...stk);
   const segLbl=(i)=>({display:ctx=>{ const v=ctx.dataset.data[ctx.dataIndex]; if(S.labels==='off'||!v) return false; if(S.labels==='all') return true; return L.length<=10&&v>=mxS*0.07; },color:css('--onseg'),font:{size:10,weight:'600'},anchor:'center',align:'center',formatter:v=>shK(v)});
   mk('cPfStack',{data:{labels:L.map(x=>x.l),datasets:[
     ...sel.map(i=>({type:'bar',label:PFF[i][0],data:L.map(x=>Math.round(x.fc[i])),backgroundColor:col[i],stack:'a',borderRadius:2,yAxisID:'y',datalabels:segLbl(i)})),
-    ...(isAll?[{type:'bar',label:'Unallocated (no production)',data:L.map(x=>Math.round(x.un)),backgroundColor:tx+'88',stack:'a',borderRadius:2,yAxisID:'y',datalabels:Object.assign(segLbl(),{color:b.ink})}]:[]),
+    ...(isAll?[{type:'bar',label:'Shared cost',data:L.map(x=>Math.round(x.un)),backgroundColor:tx+'88',stack:'a',borderRadius:2,yAxisID:'y',datalabels:Object.assign(segLbl(),{color:b.ink})}]:[]),
     {type:'line',label:isAll?'All-in ₹ / motor':D+' ₹ / motor',data:L.map(x=>{const m=isAll?sum(x.p):sMot(x), c=isAll?x.cost:sCost(x); return m?+(c/m).toFixed(2):null;}),borderColor:css('--s5'),backgroundColor:css('--s5'),borderWidth:2.5,pointRadius:3.5,pointHoverRadius:6,tension:.3,spanGaps:true,yAxisID:'y1',
       datalabels:{display:ctx=>lblOn(ctx,L.length)&&ctx.dataset.data[ctx.dataIndex]!=null,align:'top',anchor:'end',color:b.ink,backgroundColor:b.surf,borderRadius:3,padding:{top:1,bottom:1,left:3,right:3},font:{size:10.5,weight:'700'},formatter:v=>v==null?'':'₹'+v.toFixed(1)}}]},
     options:Object.assign({responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},plugins:{legend:b.legend,tooltip:Object.assign({},b.tip,{callbacks:{label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?rs2(c.parsed.y):rs0(c.parsed.y))}})},
       scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:b.grid},border:{display:false},title:{display:true,text:'P&F cost (₹)'},ticks:{callback:v=>inr(v)}},y1:{position:'right',beginAtZero:true,grid:{display:false},border:{display:false},title:{display:true,text:'₹ per motor'}}}},mix)});
-  const dn=[...sel.map(i=>[PFF[i][0],T.fc[i],col[i]]),...(isAll?[['Unallocated',T.un,tx+'88']]:[])].filter(x=>x[1]>0.5), dnT=sum(dn.map(x=>x[1]))||1;
+  const dn=[...sel.map(i=>[PFF[i][0],T.fc[i],col[i]]),...(isAll?[['Shared',T.un,tx+'88']]:[])].filter(x=>x[1]>0.5), dnT=sum(dn.map(x=>x[1]))||1;
   mk('cPfDonut',{type:'doughnut',data:{labels:dn.map(x=>x[0]),datasets:[{data:dn.map(x=>Math.round(x[1])),backgroundColor:dn.map(x=>x[2]),borderColor:b.surf,borderWidth:3,hoverOffset:8,
-      datalabels:{display:ctx=>S.labels!=='off'&&ctx.dataset.data[ctx.dataIndex]/dnT>=(S.labels==='all'?0.02:0.06),color:ctx=>dn[ctx.dataIndex][0]==='Unallocated'?b.ink:css('--onseg'),font:{size:11,weight:'700'},formatter:v=>(v/dnT*100).toFixed(0)+'%'}}]},
+      datalabels:{display:ctx=>S.labels!=='off'&&ctx.dataset.data[ctx.dataIndex]/dnT>=(S.labels==='all'?0.02:0.06),color:ctx=>dn[ctx.dataIndex][0]==='Shared'?b.ink:css('--onseg'),font:{size:11,weight:'700'},formatter:v=>(v/dnT*100).toFixed(0)+'%'}}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:b.legend,tooltip:Object.assign({},b.tip,{callbacks:{label:c=>' '+c.label+': '+rs0(c.parsed)+' ('+(c.parsed/dnT*100).toFixed(1)+'%)'}})}},
     plugins:[{id:'pfc',afterDraw(ch){ const a=ch.chartArea, x=ch.ctx; x.save(); x.textAlign='center'; x.fillStyle=b.ink; x.font='700 22px '+css('--font-d'); x.fillText(inr(isAll?T.cost:SC),(a.left+a.right)/2,(a.top+a.bottom)/2+4); x.fillStyle=tx; x.font='600 11px '+css('--font'); x.fillText(isAll?'TOTAL P&F':D+' P&F',(a.left+a.right)/2,(a.top+a.bottom)/2+22); x.restore(); }}]});
   /* P&F cost per motor: line graph, filtered by department */
@@ -960,7 +955,7 @@ function renderCons(){
       backgroundColor:ctx=>{ const a=ctx.chart.chartArea; if(!a) return c1+'33'; const gr=ctx.chart.ctx.createLinearGradient(0,a.top,0,a.bottom); gr.addColorStop(0,c1+'88'); gr.addColorStop(1,c1+'05'); return gr; },
       datalabels:{display:ctx=>lblOn(ctx,cum.length),align:ctx=>ctx.dataIndex===cum.length-1?'left':'top',anchor:'end',color:b.ink,backgroundColor:b.surf,borderRadius:3,padding:3,font:{size:10.5,weight:'700'},formatter:v=>inr(v)}}]},
     options:Object.assign({responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,right:8}},plugins:{legend:{display:false},tooltip:Object.assign({},b.tip,{callbacks:{label:c=>' '+rs0(c.parsed.y)}})},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true}},y:{beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{callback:v=>inr(v)}}}},mix)});
-  const dd=pd.map(d=>({l:dl(d.date),v:d.cost/d.t})), av=(isAll?M?T.cost/M:0:SM?SC/SM:0);
+  const dd=pd.map(d=>({l:dl(d.date),v:isAll?d.cost/d.t:sCost(d)/sMot(d)})), av=(isAll?M?T.cost/M:0:SM?SC/SM:0);
   mk('cPfDay',{data:{labels:dd.map(x=>x.l),datasets:[{type:'bar',label:(isAll?'All-in':D)+' ₹ / motor',data:dd.map(x=>+x.v.toFixed(2)),backgroundColor:dd.map(x=>x.v>av*1.25?css('--s5'):x.v<av*.85?css('--s3'):css('--s1')),borderRadius:5,order:2,
       datalabels:{display:ctx=>lblOn(ctx,dd.length),anchor:'end',align:'end',color:b.ink,font:{size:10,weight:'700'},formatter:v=>'₹'+v.toFixed(1)}},
       {type:'line',label:'Average ₹'+av.toFixed(2),data:dd.map(()=>+av.toFixed(2)),borderColor:css('--s4'),borderDash:[6,5],borderWidth:2,pointRadius:0,order:1,datalabels:{display:false}}]},
@@ -971,19 +966,19 @@ function renderCons(){
   const sx=sel.map(i=>[PFF[i][2],PFF[i][0].split('-')[1],T.p[i],pc(T.p[i]),M?+((PFF[i][2]==='BLDC'?DB.m:DP.m)/M*100).toFixed(1):null,r2(T.fc[i]),pmx(T.fc[i],T.p[i])]);
   if(isAll||D==='BLDC') sx.push(['BLDC total','',DB.m,pc(DB.m),null,r2(DB.c),pmx(DB.c,DB.m)]);
   if(isAll||D==='PSC') sx.push(['PSC total','',DP.m,pc(DP.m),null,r2(DP.c),pmx(DP.c,DP.m)]);
-  if(isAll) sx.push(['Total (allocated)','',M,100,null,r2(AL),pmx(AL,M)],['Unallocated (days with no production)','',null,null,null,r2(T.un),null],['Total P&F cost · all-in per motor','',null,null,null,r2(T.cost),pmx(T.cost,M)]);
+  if(isAll) sx.push(['Total (allocated)','',M,100,null,r2(AL),pmx(AL,M)],['Shared cost (not given to frames)','',null,null,null,r2(T.un),null],['Total P&F cost · all-in per motor','',null,null,null,r2(T.cost),pmx(T.cost,M)]);
   PFS={head:['Dept','Frame','Production (Nos.)','% share of total','Dept-wise share (%)','Cost of share (₹)','P&F cost / motor (₹)'],body:sx,from:days[0].date,to:days[days.length-1].date};
   $('pfSum').innerHTML='<thead><tr><th>Dept</th><th>Frame</th><th>Production (Nos.)</th><th>% share of total</th><th>Dept-wise share</th><th>Cost of share (₹)</th><th>P&amp;F cost / motor (₹)</th></tr></thead><tbody>'+
     sel.map(i=>{ const f=PFF[i]; return `<tr><td>${f[2]}</td><td>${dot(i)}${f[0].split('-')[1]}</td><td>${n0(T.p[i])}</td><td>${M?(T.p[i]/M*100).toFixed(1)+'%':'–'}</td><td>${M&&(f[2]==='BLDC'?DB.m:DP.m)?((f[2]==='BLDC'?DB.m:DP.m)/M*100).toFixed(1)+'%':'–'}</td><td>${rs0(T.fc[i])}</td><td><b>${T.p[i]?rs2(T.fc[i]/T.p[i]):'–'}</b></td></tr>`; }).join('')+
     ((isAll||D==='BLDC')?depTot('BLDC',DB):'')+((isAll||D==='PSC')?depTot('PSC',DP):'')+
-    (isAll?`<tr class="pft"><td colspan="2">Total (allocated)</td><td>${n0(M)}</td><td>100%</td><td></td><td>${rs0(AL)}</td><td>${M?rs2(AL/M):'–'}</td></tr><tr><td colspan="5">Unallocated (days with no production)</td><td>${rs0(T.un)}</td><td></td></tr><tr class="pft"><td colspan="5">Total P&amp;F cost · all-in per motor</td><td>${rs0(T.cost)}</td><td>${M?rs2(T.cost/M):'–'}</td></tr>`:'')+'</tbody>';
+    (isAll?`<tr class="pft"><td colspan="2">Total (allocated)</td><td>${n0(M)}</td><td>100%</td><td></td><td>${rs0(AL)}</td><td>${M?rs2(AL/M):'–'}</td></tr><tr><td colspan="5">Shared cost (not given to frames)</td><td>${rs0(T.un)}</td><td></td></tr><tr class="pft"><td colspan="5">Total P&amp;F cost · all-in per motor</td><td>${rs0(T.cost)}</td><td>${M?rs2(T.cost/M):'–'}</td></tr>`:'')+'</tbody>';
   /* Daily allocation table + Excel export data */
   const fn=sel.map(i=>PFF[i][0]);
-  const head=['Date','Total P&F cost (₹)',...fn.map(n=>n+' (Nos.)'),isAll?'Total motors':D+' motors',isAll?'Allocated (₹)':D+' allocated (₹)',...(isAll?['Unallocated (₹)']:[]),'₹ / motor'];
-  const body=days.map(d=>{ const sm=sMot(d), al=isAll?(d.t?d.cost:0):sCost(d); return {d,sm,al,x:[d.date,Math.round(d.cost*100)/100,...sel.map(i=>d.p[i]),sm,Math.round(al*100)/100,...(isAll?[Math.round(d.un*100)/100]:[]),sm?+(al/sm).toFixed(2):null]}; });
+  const head=['Date','Total P&F cost (₹)',...fn.map(n=>n+' (Nos.)'),isAll?'Total motors':D+' motors',isAll?'Direct (₹)':D+' direct (₹)',...(isAll?['Shared (₹)']:[]),'₹ / motor'];
+  const body=days.map(d=>{ const sm=sMot(d), al=sCost(d); return {d,sm,al,x:[d.date,Math.round(d.cost*100)/100,...sel.map(i=>d.p[i]),sm,Math.round(al*100)/100,...(isAll?[Math.round(d.un*100)/100]:[]),sm?+(al/sm).toFixed(2):null]}; });
   const foot=['Total',Math.round(T.cost*100)/100,...sel.map(i=>T.p[i]),SM,Math.round((isAll?AL:SC)*100)/100,...(isAll?[Math.round(T.un*100)/100]:[]),SM?+((isAll?AL:SC)/SM).toFixed(2):null];
   PFX={head,body:body.map(r=>r.x),foot,from:days[0].date,to:days[days.length-1].date};
-  $('pfDay').innerHTML='<thead><tr><th>Date</th><th>Total P&amp;F cost</th>'+sel.map(i=>`<th>${dot(i)}${PFF[i][0]}</th>`).join('')+`<th>${isAll?'Total motors':D+' motors'}</th><th>${isAll?'Allocated':D+' allocated'}</th>`+(isAll?'<th>Unallocated</th>':'')+'<th>₹ / motor</th></tr></thead><tbody>'+
+  $('pfDay').innerHTML='<thead><tr><th>Date</th><th>Total P&amp;F cost</th>'+sel.map(i=>`<th>${dot(i)}${PFF[i][0]}</th>`).join('')+`<th>${isAll?'Total motors':D+' motors'}</th><th>${isAll?'Direct cost':D+' direct'}</th>`+(isAll?'<th>Shared</th>':'')+'<th>₹ / motor</th></tr></thead><tbody>'+
     body.map(({d,sm,al})=>`<tr><td>${dl(d.date)}</td><td>${rs0(d.cost)}</td>${sel.map(i=>`<td>${d.p[i]?n0(d.p[i]):'–'}</td>`).join('')}<td>${sm?n0(sm):'–'}</td><td>${sm?rs0(al):'–'}</td>${isAll?`<td>${d.un?rs0(d.un):'–'}</td>`:''}<td><b>${sm?rs2(al/sm):'–'}</b></td></tr>`).join('')+
     `</tbody><tfoot><tr><td>Total</td><td>${rs0(T.cost)}</td>${sel.map(i=>`<td>${n0(T.p[i])}</td>`).join('')}<td>${n0(SM)}</td><td>${rs0(isAll?AL:SC)}</td>${isAll?`<td>${rs0(T.un)}</td>`:''}<td>${SM?rs2((isAll?AL:SC)/SM):'–'}</td></tr></tfoot>`;
 }
