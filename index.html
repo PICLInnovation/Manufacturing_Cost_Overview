@@ -203,8 +203,10 @@ tfoot td{font-weight:700;background:var(--tile)}
 .hc.none{background:repeating-linear-gradient(45deg,transparent 0 4px,var(--grid) 4px 5px);cursor:default;outline:0;border:1px dashed var(--grid)}
 .hleg{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
 .hleg i{display:block;width:110px;height:8px;border-radius:99px;background:linear-gradient(90deg,var(--tile),var(--neu))}
-.ins{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--grid);font-size:13.5px;line-height:1.5}
-.ins:last-child{border-bottom:0}.ins .dot{margin-top:7px}.ins b{font-weight:600}
+.insg{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));column-gap:40px}
+.ins{display:flex;align-items:center;gap:14px;padding:14px 2px;border-bottom:1px solid var(--grid);font-size:14.5px;line-height:1.5;color:var(--ink)}
+.ins .ii{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:16px;background:color-mix(in srgb,var(--ic) 22%,transparent)}
+.ins b{font-weight:700;color:color-mix(in srgb,var(--ic) 65%,var(--ink))}
 
 /* present mode */
 body.sbhide .side{display:none}.sbhide .app{grid-template-columns:minmax(0,1fr)}
@@ -338,7 +340,7 @@ tr.pft td{font-weight:700;background:var(--tile)}
   <button class="reset" id="reset" type="button">Reset filters</button>
   <div class="sidefoot">
     <div class="ibtns"><button class="ibtn" id="present" type="button" title="Full screen presentation" aria-label="Full screen presentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button class="ibtn on" id="themeBtn" type="button" title="Switch light / dark" aria-label="Switch light or dark theme">🌙</button></div>
-    <div>Source: master workbook, built 24 Nov 2026 09:34. Labour ₹115 per man-hour (BLDC ₹88). P&amp;F = actual direct P&amp;F of the frame from the MIS (shared cost not included; Chimney fixed ₹5).</div>
+    <div>Source: master workbook, built 24 Nov 2026 14:11. Labour ₹115 per man-hour (BLDC ₹88). P&amp;F = actual direct P&amp;F of the frame from the MIS (shared cost not included; Chimney fixed ₹5).</div>
   </div>
 </aside>
 
@@ -399,22 +401,14 @@ tr.pft td{font-weight:700;background:var(--tile)}
       <div class="plot mid"><canvas id="cScat"></canvas><div class="empty" id="eScat" hidden>No cost days for this selection.</div></div>
     </div>
     <div class="card c4">
-      <div class="ch"><div><h2>Man-hours</h2><p class="d">Attendance hours by department</p></div></div>
+      <div class="ch"><div><h2>HR Manhour Data</h2><p class="d">Attendance hours by department</p></div></div>
       <div class="plot mid"><canvas id="cHrs"></canvas></div>
     </div>
     <div class="card c4">
       <div class="ch"><div><h2 id="lbTitle">Highest &amp; lowest day</h2><p class="d">Total cost per motor, selected frames and dates</p></div></div>
       <div class="lb" id="lb"></div>
     </div>
-    <div class="card c8">
-      <div class="ch"><div><h2 id="lineTitle">Line-wise</h2><p class="d" id="lineSub"></p></div>
-        <div class="row">
-          <select id="lineDept" aria-label="Line department"><option value="PSC Winding">PSC Winding</option><option value="PSC Assy">PSC Assembly</option><option value="BLDC Assy">BLDC Assembly</option><option value="BLDC Winding">BLDC Winding</option></select>
-          <select id="lineMetric" aria-label="Line metric"><option value="cost">Cost / motor</option><option value="prod">Production</option></select>
-        </div></div>
-      <div class="plot"><canvas id="cLine"></canvas><div class="empty" id="eLine" hidden>No line data for this selection.</div></div>
-    </div>
-    <div class="card c4">
+    <div class="card c12">
       <div class="ch"><div><h2>What stands out</h2><p class="d">Written from the current selection</p></div></div>
       <div id="ins"></div>
     </div>
@@ -660,19 +654,19 @@ function renderHeat(days){
 function renderInsights(days){
   const ks=selK(4), out=[];
   const fa=ks.map(k=>{let s=0,p=0; days.forEach(d=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;}}); return p?{k,v:s/p}:null;}).filter(Boolean).sort((a,b)=>b.v-a.v);
-  if(fa.length>=2){ const a=fa[0], z=fa[fa.length-1]; out.push([FR[a.k].tok,`<b>${FR[a.k].name}</b> is the costliest at <b>${rs(a.v)}</b> per motor, ${n1(a.v/z.v)}× ${FR[z.k].name} (${rs(z.v)}).`]); }
+  if(fa.length>=2){ const a=fa[0], z=fa[fa.length-1]; out.push(['--bad','🔴',`<b>${FR[a.k].name}</b> is the costliest at <b>${rs(a.v)}</b> per motor, ${n1(a.v/z.v)}× ${FR[z.k].name} (${rs(z.v)}).`]); out.push(['--good','🟢',`<b>${FR[z.k].name}</b> is the cheapest at <b>${rs(z.v)}</b> per motor.`]); }
   const cp=costParts(days);
-  if(cp.P){ const i=cp.vals.indexOf(Math.max(...cp.vals)); out.push([cp.parts[i][2],`<b>${cp.parts[i][0]}</b> is the biggest cost block: ${rs(cp.vals[i])} of ${rs(cp.tot)} (${n0(cp.vals[i]/cp.tot*100)}%).`]); }
+  if(cp.P){ const i=cp.vals.indexOf(Math.max(...cp.vals)); out.push(['--s4','🧩',`<b>${cp.parts[i][0]}</b> is the biggest cost block: <b>${rs(cp.vals[i])}</b> of ${rs(cp.tot)} (${n0(cp.vals[i]/cp.tot*100)}%).`]); }
   let pk=null; ks.forEach(k=>days.forEach(d=>{const t=d.tot[k][4]; if(t!=null&&(!pk||t>pk.t)) pk={k,t,d:d.date};}));
-  if(pk){ const av=fa.find(x=>x.k===pk.k); if(av&&av.v>0) out.push([FR[pk.k].tok,`<b>${FR[pk.k].name}</b> peaked on <b>${dl(pk.d)}</b> at ${rs(pk.t)}, ${n0((pk.t/av.v-1)*100)}% above its own average.`]); }
+  if(pk){ const av=fa.find(x=>x.k===pk.k); if(av&&av.v>0) out.push(['--bad','📈',`<b>${FR[pk.k].name}</b> peaked on <b>${dl(pk.d)}</b> at <b>${rs(pk.t)}</b>, ${n0((pk.t/av.v-1)*100)}% above its own average.`]); }
   const pts=days.map(d=>{let s=0,p=0,m=0; ks.forEach(k=>{const t=d.tot[k][4],q=prodOf(d,k); if(t!=null&&q){s+=t*q;p+=q;m+=q;}}); return p?{m,c:s/p}:null;}).filter(Boolean);
   if(pts.length>=6){ const sm=pts.map(x=>x.m).sort((a,b)=>a-b), med=sm[Math.floor(sm.length/2)];
     const hi=pts.filter(x=>x.m>med), lo=pts.filter(x=>x.m<=med);
     if(hi.length&&lo.length){ const ha=sum(hi.map(x=>x.c))/hi.length, la=sum(lo.map(x=>x.c))/lo.length, df=(la-ha)/la*100;
-      out.push(['--s3',`On heavier days (above ${n0(med)} motors) cost averaged <b>${rs(ha)}</b> against <b>${rs(la)}</b> on lighter days, ${n0(Math.abs(df))}% ${df>=0?'lower':'higher'}.`]); } }
+      out.push([df>=0?'--good':'--bad',df>=0?'📉':'📈',`On heavier days (above ${n0(med)} motors) cost averaged <b>${rs(ha)}</b> against <b>${rs(la)}</b> on lighter days, <b>${n0(Math.abs(df))}% ${df>=0?'lower':'higher'}</b>.`]); } }
   const motors=sum(ks.map(k=>sum(days.map(d=>prodOf(d,k))))), att=sum(days.map(d=>sum(Object.values(d.att))));
-  if(motors&&att) out.push(['--neu',`Attendance works out to <b>${n1(att/motors)} man-hours per motor</b> across all departments.`]);
-  $('ins').innerHTML=out.length?out.map(o=>`<div class="ins"><span class="dot" style="background:var(${o[0]})"></span><div>${o[1]}</div></div>`).join(''):'<div style="color:var(--muted)">No cost days for this selection.</div>';
+  if(motors&&att) out.push(['--neu','👷',`Attendance works out to <b>${n1(att/motors)} man-hours per motor</b> across all departments.`]);
+  $('ins').innerHTML=out.length?'<div class="insg">'+out.map(o=>`<div class="ins" style="--ic:var(${o[0]})"><span class="ii">${o[1]}</span><div>${o[2]}</div></div>`).join('')+'</div>':'<div style="color:var(--muted)">No cost days for this selection.</div>';
 }
 
 /* ---------- Trend ---------- */
@@ -741,27 +735,6 @@ function renderHrs(days){
       scales:{x:{beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>n0(v)}},y:{grid:{display:false},ticks:{color:b.ink2}}}}});
 }
 
-/* ---------- Line-wise ---------- */
-function renderLine(days){
-  const b=base(), dept=S.lineDept, set=new Set(days.map(d=>d.date));
-  let metric=S.lineMetric; if(dept==='BLDC Winding') metric='prod';
-  const psc=dept.startsWith('PSC'), fmap=['C','E','H'];
-  const rows=DATA.lines.filter(r=>r[0]===dept&&set.has(r[1])&&(!psc||S.frames[fmap.indexOf(r[3])]));
-  const maxL=psc?10:3, acc={}; for(let l=1;l<=maxL;l++) acc[l]={p:0,c:0,h:0};
-  rows.forEach(r=>{const a=acc[r[2]]; if(!a) return; a.p+=r[4]||0; a.c+=r[7]||0; a.h+=r[5]||0;});
-  const ls=Object.keys(acc).map(Number).filter(l=>acc[l].p>0);
-  const col=css(dept==='PSC Winding'?'--s1':dept==='PSC Assy'?'--s2':dept==='BLDC Assy'?'--s4':'--s3');
-  const data=ls.map(l=>metric==='cost'?acc[l].c/acc[l].p:acc[l].p);
-  $('lineTitle').textContent=(dept==='PSC Assy'?'PSC Assembly':dept==='BLDC Assy'?'BLDC Assembly':dept)+' by line';
-  $('lineSub').textContent=metric==='cost'?'Labour cost per motor (₹) per line'+(psc?', selected frames':''):'Motors produced per line'+(dept==='BLDC Winding'?' (no cost block for BLDC Winding in your logic)':psc?', selected frames':'');
-  $('lineMetric').value=metric;
-  showEmpty('eLine',!ls.length);
-  mk('cLine',{type:'bar',data:{labels:ls.map(l=>'Line '+l),datasets:[{label:metric==='cost'?'₹ per motor':'Motors',data,backgroundColor:col,borderRadius:5,maxBarThickness:46,
-    datalabels:{display:()=>S.labels!=='off',anchor:'end',align:'end',color:b.ink,font:{size:11,weight:'700'},formatter:v=>metric==='cost'?'₹'+n0(v):n0(v)}}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},plugins:{legend:{display:false},tooltip:Object.assign({},b.tip,{callbacks:{label:c=>{const a=acc[ls[c.dataIndex]];return [` ${metric==='cost'?'₹'+n1(c.parsed.y)+' per motor':n0(c.parsed.y)+' motors'}`,` ${n0(a.p)} motors · ${n0(a.h)} booked hrs`];}}})},
-      scales:{x:{grid:{display:false},ticks:{color:b.ink2}},y:{beginAtZero:true,grid:{color:b.grid},border:{display:false},ticks:{color:b.ink2,callback:v=>metric==='cost'?'₹'+v:n0(v)}}}}});
-}
-
 /* ---------- Timeline ---------- */
 function renderTimeline(days){
   const ks=selK(4), all=DATA.days, vals=all.map(d=>sum(ks.map(k=>prodOf(d,k)))), mx=Math.max(1,...vals), top=vals.indexOf(Math.max(...vals));
@@ -801,7 +774,7 @@ function renderTable(days){
 
 function render(){
   const days=rangeDays(), bd=bucketize(days);
-  renderHeadline(days); renderTimeline(days); renderDonut(days); renderHeat(bd); renderTrend(bd); renderComp(days); renderProd(bd); renderWater(days); renderScatter(bd); renderHrs(days); renderLeader(bd); renderLine(days); renderInsights(days); renderTable(bd); updateTitles(); renderCons();
+  renderHeadline(days); renderTimeline(days); renderDonut(days); renderHeat(bd); renderTrend(bd); renderComp(days); renderProd(bd); renderWater(days); renderScatter(bd); renderHrs(days); renderLeader(bd); renderInsights(days); renderTable(bd); updateTitles(); renderCons();
 }
 
 /* ---------- Controls (dropdowns) ---------- */
@@ -839,7 +812,7 @@ function buildFrameMenu(){
 function syncControls(){
   $('from').value=S.from; $('to').value=S.to; syncRange();
   $('metric').value=S.metric; $('daysSel').value=S.prodOnly?'prod':'all'; $('labelSel').value=S.labels;
-  $('viewBy').value=S.view; syncRg(); $('stage').value=S.stage; $('lineMetric').value=S.lineMetric; $('lineDept').value=S.lineDept;
+  $('viewBy').value=S.view; syncRg(); $('stage').value=S.stage;
   buildFrameMenu();
 }
 function setRange(a,b){ if(a>b){const t=a;a=b;b=t;} S.from=a; S.to=b; $('from').value=a; $('to').value=b; syncRange(); syncRg(); render(); }
@@ -856,8 +829,6 @@ $('metric').addEventListener('change',()=>{S.metric=$('metric').value; render();
 $('daysSel').addEventListener('change',()=>{S.prodOnly=$('daysSel').value==='prod'; render();});
 $('labelSel').addEventListener('change',()=>{S.labels=$('labelSel').value; render();});
 $('stage').addEventListener('change',()=>{S.stage=$('stage').value; render();});
-$('lineMetric').addEventListener('change',()=>{S.lineMetric=$('lineMetric').value; render();});
-$('lineDept').addEventListener('change',()=>{S.lineDept=$('lineDept').value; render();});
 $('heat').addEventListener('click',e=>{const c=e.target.closest('[data-d]'); if(c) focusKey(c.dataset.d);});
 $('lb').addEventListener('click',e=>{const c=e.target.closest('[data-d]'); if(c) focusKey(c.dataset.d);});
 $('tiles').addEventListener('click',e=>{const b=e.target.closest('[data-i]'); if(!b) return; const i=+b.dataset.i; const only=S.frames.filter(Boolean).length===1&&S.frames[i]; S.frames=only?[1,1,1,1,1]:[0,1,2,3,4].map(j=>j===i?1:0); buildFrameMenu(); render();});
