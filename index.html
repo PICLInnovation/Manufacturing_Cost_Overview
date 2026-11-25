@@ -340,7 +340,7 @@ tr.pft td{font-weight:700;background:var(--tile)}
   <button class="reset" id="reset" type="button">Reset filters</button>
   <div class="sidefoot">
     <div class="ibtns"><button class="ibtn" id="present" type="button" title="Full screen presentation" aria-label="Full screen presentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button class="ibtn on" id="themeBtn" type="button" title="Switch light / dark" aria-label="Switch light or dark theme">🌙</button></div>
-    <div>Source: master workbook, built 24 Nov 2026 14:11. Labour ₹115 per man-hour (BLDC ₹88). P&amp;F = actual direct P&amp;F of the frame from the MIS (shared cost not included; Chimney fixed ₹5).</div>
+    <div>Source: master workbook, built 25 Nov 2026 11:41. Labour ₹115 per man-hour (BLDC ₹88). P&amp;F = actual direct P&amp;F of the frame from the MIS (shared cost not included; Chimney fixed ₹5).</div>
   </div>
 </aside>
 
@@ -857,7 +857,7 @@ const PFF=[['BLDC-IDU','--s2','BLDC'],['BLDC-ODU','--s4','BLDC'],['PSC-C','--s1'
 const inr=x=>{ if(x==null||isNaN(x)) return '–'; const a=Math.abs(x); return a>=1e7?'₹'+(x/1e7).toFixed(2)+' Cr':a>=1e5?'₹'+(x/1e5).toFixed(2)+' L':'₹'+n0(x); };
 const rs0=x=>x==null?'–':'₹'+n0(x), rs2=x=>x==null?'–':'₹'+x.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 function bkOf(date){ if(S.view==='d') return [date,dl(date)]; if(S.view==='w'){ const i=isoWeek(date); return ['w'+i,i]; } return [date.slice(0,7),new Date(date+'T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'})]; }
-let PFX=null, PFS=null;
+let PFX=null, PFS=null, PFTAG='All';
 const lblOn=(ctx,n)=>{ if(S.labels==='off') return false; if(S.labels==='all'||n<=16) return true; const st=Math.ceil(n/12); return ctx.dataIndex%st===0||ctx.dataIndex===n-1; };
 const shK=v=>v>=1e5?(v/1e5).toFixed(1)+'L':n0(v);
 function renderCons(){
@@ -867,7 +867,14 @@ function renderCons(){
   $('consEmpty').hidden=rows.length>0; $('consData').hidden=!rows.length;
   if(!rows.length){ PFX=null; $('consEmptyTxt').textContent=CONS.days.length?'No P&F cost for the selected dates.':'No P&F cost found. Put the Maintenance Daily MIS in the Electric_Consumption folder and run the update: the column "Total P&F Cost (₹)" is read for every day.'; return; }
   const b=base(), tx=css('--muted'), col=PFF.map(f=>css(f[1]));
-  const D=S.dept, isAll=D==='all', sel=PFF.map((f,i)=>(isAll||f[2]===D)?i:-1).filter(i=>i>=0), DNAME=isAll?'All':D;
+  /* Department filter AND Frame filter (sidebar) both decide which P&F frames are shown. PFF order [BLDC-IDU, BLDC-ODU, PSC-C, PSC-H, PSC-E] -> sidebar frames [C,E,H,BLDC,Chimney] = indexes [3,3,0,2,1] */
+  const D0=S.dept, FMAP=[3,3,0,2,1];
+  const sel=PFF.map((f,i)=>((D0==='all'||f[2]===D0)&&S.frames[FMAP[i]])?i:-1).filter(i=>i>=0);
+  if(!sel.length){ PFX=null; PFS=null; $('consEmpty').hidden=false; $('consData').hidden=true;
+    $('consEmptyTxt').textContent=(S.frames[4]&&![0,1,2,3].some(k=>S.frames[k]))?'Chimney has no P&F cost in this tab (only PSC C / E / H and BLDC get P&F). Select another frame.':'No frame selected for this department. Choose frames in the Frame filter.'; PFTAG='none'; return; }
+  const dpt=[...new Set(sel.map(i=>PFF[i][2]))], isAll=D0==='all'&&sel.length===PFF.length;
+  const D=isAll?'All':((dpt.length===1&&sel.length===PFF.filter(f=>f[2]===dpt[0]).length)?dpt[0]:sel.map(i=>PFF[i][0]).join(' + '));
+  PFTAG=D.replace(/[^A-Za-z0-9]+/g,'_');
   const days=rows.map(r=>{ const t=sum(r.p); if(r.fc) return {date:r.date,cost:r.cost,p:r.p,t,fc:r.fc,un:r.un||0}; const fc=r.p.map(x=>t?r.cost*x/t:0); return {date:r.date,cost:r.cost,p:r.p,t,fc,un:t?0:r.cost}; });
   const g={}; days.forEach(d=>{ const [k,l]=bkOf(d.date), o=g[k]=g[k]||{l,cost:0,un:0,fc:[0,0,0,0,0],p:[0,0,0,0,0]}; o.cost+=d.cost; o.un+=d.un; d.fc.forEach((x,i)=>{o.fc[i]+=x; o.p[i]+=d.p[i];}); });
   const L=Object.keys(g).sort().map(k=>g[k]);
@@ -892,7 +899,7 @@ function renderCons(){
     card('Shared cost (plant)',inr(T.un),'Lighting, AC, Compressor, R&D',css('--s4'))
   ]).join('');
   const pd=days.filter(d=>sMot(d)>0), hi=pd.slice().sort((a,c)=>sCost(c)/sMot(c)-sCost(a)/sMot(a))[0], lo=pd.slice().sort((a,c)=>sCost(a)/sMot(a)-sCost(c)/sMot(c))[0];
-  $('pfRec').innerHTML=(isAll?`<span>Frames + Shared = Total: <b>${rs0(AL)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`:`<span>${D} + other department + Shared = Total: <b>${rs0(SC)} + ${rs0(AL-SC)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`)+(hi?`<span>Highest day: <b>${dl(hi.date)} · ${rs2(sCost(hi)/sMot(hi))}</b>/motor (${n0(sMot(hi))} ${isAll?'':D+' '}motors)</span><span>Lowest day: <b>${dl(lo.date)} · ${rs2(sCost(lo)/sMot(lo))}</b>/motor (${n0(sMot(lo))} ${isAll?'':D+' '}motors)</span>`:'');
+  $('pfRec').innerHTML=(isAll?`<span>Frames + Shared = Total: <b>${rs0(AL)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`:`<span>${D} + other frames + Shared = Total: <b>${rs0(SC)} + ${rs0(AL-SC)} + ${rs0(T.un)} = ${rs0(T.cost)}</b> <span class="ok">${Math.abs(AL+T.un-T.cost)<1?'✓ matches':'✗ check'}</span></span>`)+(hi?`<span>Highest day: <b>${dl(hi.date)} · ${rs2(sCost(hi)/sMot(hi))}</b>/motor (${n0(sMot(hi))} ${isAll?'':D+' '}motors)</span><span>Lowest day: <b>${dl(lo.date)} · ${rs2(sCost(lo)/sMot(lo))}</b>/motor (${n0(sMot(lo))} ${isAll?'':D+' '}motors)</span>`:'');
   $('pfStackT').textContent='Where the P&F money goes'+(isAll?'':' · '+D)+' · '+UN[S.view][2].toLowerCase();
   const mix={interaction:{mode:'index',intersect:false}};
   const stk=L.map(x=>sCost(x)+(isAll?x.un:0)), mxS=Math.max(1,...stk);
@@ -963,7 +970,7 @@ function pfExport(aoa,name,sheet){
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=name+'.csv'; document.body.appendChild(a); a.click(); a.remove();
   }
 }
-const pfTag=()=>S.dept==='all'?'All':S.dept;
+const pfTag=()=>PFTAG;
 $('pfXls').addEventListener('click',()=>{ if(PFX) pfExport([PFX.head,...PFX.body,PFX.foot],'PF_Daily_Allocation_'+pfTag()+'_'+PFX.from+'_to_'+PFX.to,'Daily allocation'); });
 $('pfSumXls').addEventListener('click',()=>{ if(PFS) pfExport([PFS.head,...PFS.body],'PF_Frame_Summary_'+pfTag()+'_'+PFS.from+'_to_'+PFS.to,'Frame summary'); });
 function setTab(t){ document.body.classList.toggle('tab-cons',t==='cons'); $('tabCost').setAttribute('aria-selected',String(t==='cost')); $('tabCons').setAttribute('aria-selected',String(t==='cons')); $('hTitle').textContent=t==='cons'?'Power & Fuel cost overview':'Cost overview'; render(); }
